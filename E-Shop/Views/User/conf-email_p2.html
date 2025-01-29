@@ -1,0 +1,15 @@
+<body>
+    <div class="container">
+        <h1>Confirm your email to finish registration</h1>
+        <hr>
+        <div class="container" style="width: 40%">
+            <p>Please confirm that <b>{0}</b> is your email address by clicking on the button below.</p>
+        </div>
+        <hr>
+        <form action="http://{1}/User/ConfirmEmail" method="post">
+            <input type="text" name="key" value="{2}" style="display: none">
+            <input type="submit" value="Confirm my email">
+        </form>
+    </div>
+</body>
+</html>

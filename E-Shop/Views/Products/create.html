@@ -1,0 +1,36 @@
+﻿<form method="post">
+    <div class="container mt-5">
+        <h1>Create new Product</h1>
+        <hr>
+        <div class="mb-3">
+            <label for="name" class="form-label">Name:</label>
+            <input type="text" class="form-control" placeholder="Name" name="name" id="name" value="{0}">
+            {1}
+        </div>
+        <div class="mb-3">
+            <label for="price" class="form-label">Price:</label>
+            <input type="number" class="form-control" placeholder="Price" name="price" id="price" step="0.01" value="{2}">
+            {3}
+        </div>
+        <div class="mb-3">
+            <label for="categories" class="form-label">Categories:</label>
+            <select class="selectpicker w-100" multiple data-live-search="true"
+                    data-selected-text-format="count > 5" name="categories" id="categories">
+                {8}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="image-url" class="form-label">Image Url:</label>
+            <input type="text" class="form-control" placeholder="Image url" name="image-url" id="image-url" value="{4}">
+            {5}
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description:</label>
+            <textarea class="form-control" placeholder="Description" name="description" id="description" rows="4">{6}</textarea>
+            {7}
+        </div>
+        <hr>
+        <button type="submit" class="btn btn-dark">Create</button>
+        <a href="Index" class="btn btn-info text-white float-end">Show all</a>
+    </div>
+</form>

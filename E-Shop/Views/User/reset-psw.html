@@ -1,0 +1,18 @@
+﻿<div class="container mt-5">
+    <h1>Reset password</h1>
+    <hr>
+    <form action="ProceedResetPassword" method="post">
+        <div class="mb-3">
+            <label for="psw" class="form-label"><b>New password</b></label>
+            <input type="password" class="form-control" name="psw" id="psw" placeholder="New password" value="{0}">
+            {1}
+        </div>
+        <div class="mb-3">
+            <label for="psw-repeat" class="form-label"><b>Repeat new password</b></label>
+            <input type="password" class="form-control" name="psw-repeat" id="psw-repeat" placeholder="Repeat new password" value="{2}">
+            {3}
+        </div>
+        <input type="text" name="key" value="{4}" style="display: none">
+        <input type="submit" class="btn btn-dark" value="Reset password">
+    </form>
+</div>

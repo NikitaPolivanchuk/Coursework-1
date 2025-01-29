@@ -1,0 +1,14 @@
+﻿<div class="container mt-5">
+    <i class="fa fa-lock" style="font-size: 6rem"></i>
+    <h1>Forgot password?</h1>
+    <p>You can reset your password here.</p>
+    <form class="w-50" action="RequestResetPassword" method="post">
+        <div class="mb-3">
+            <label for="email" class="form-label">Your email</label>
+            <input type="text" class="form-control" name="email" id="email" placeholder="Email" value="{0}">
+            {1}
+        </div>
+        <input type="submit" class="btn btn-dark" value="Request password reset">
+        <a href="#" class="btn btn-light ms-3 border">Back to Login</a>
+    </form>
+</div>

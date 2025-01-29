@@ -1,0 +1,24 @@
+﻿<form method="post">
+    <div class="container">
+        <h1>Login</h1>
+        <hr>
+        <div class="form-group">
+            <label for="email"><b>Email address:</b></label>
+            <input type="text" class="form-control" placeholder="Email" name="email" id="email" value="{0}">
+            {1}
+        </div>
+        <div class="form-group">
+            <label for="pws"><b>Password:</b></label>
+            <input type="password" class="form-control" placeholder="Password" name="psw" id="psw" value="{2}">
+            {3}
+        </div>
+        <hr>
+        <a class="float-end" href="RequestResetPassword">Forgot password?</a>
+        {4}{5}
+        <button type="submit" class="btn btn-dark">Login</button>
+    </div>
+    <br>
+    <div class="container">
+        <p>Not registered? <a href="Register">Create an account</a>.</p>
+    </div>
+</form>

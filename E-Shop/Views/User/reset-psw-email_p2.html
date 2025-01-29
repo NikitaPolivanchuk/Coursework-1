@@ -1,0 +1,13 @@
+<body>
+    <div class="container">
+        <h1>Password reset</h1>
+        <p><b>Someone requested that the password be reset for the following account:</b></p>
+        <p>To reset your password, click the button below:</p>
+        <form action="http://{0}/User/ResetPassword" method="post">
+            <input type="text" name="key" value="{1}" style="display: none">
+            <input type="submit" value="Reset password">
+        </form>
+        <p>If this was a mistake, just ignrore this email and nothing will happen.</p>
+    </div>
+</body>
+</html>

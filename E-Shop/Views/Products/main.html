@@ -1,0 +1,22 @@
+﻿<div class="container mt-5">
+    <h1>{0}</h1>
+    <div class="d-flex gap-4">
+        <div class="border text-center col-2 bg-light align-self-start">
+            <img src="{1}" alt="123" class="col-2 align-self-start w-100">
+            <p class="h4">{2}</p>
+            <div class="d-flex flex-column p-2">
+                {3}
+                <a href="../Cart/Add/{5}" class="btn btn-info text-white mb-1 {4} px-5">Add to cart</a>
+                <a href="../Order/Direct/{5}" class="btn btn-dark {4} px-5">Buy</a>
+            </div>
+        </div>
+        <div class="flex-grow-1">
+            <p class="h4">Categories:</p>
+            <ul class="list-unstyled d-flex flex-wrap gap-2">
+                {6}
+            </ul>
+            <hr>
+            <p>{7}</p>
+        </div>
+    </div>
+</div>
