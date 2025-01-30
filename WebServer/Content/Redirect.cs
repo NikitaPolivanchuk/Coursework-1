@@ -1,4 +1,5 @@
-﻿namespace Webserver.Content
+﻿
+namespace Webserver.Content
 {
     public class Redirect : IActionResult
     {
@@ -7,6 +8,12 @@
         internal Redirect(string url)
         {
             Url = url;
+        }
+
+        public Task ExecuteResultAsync(WebServer server)
+        {
+            server.Response.Redirect(Url);
+            return Task.CompletedTask;
         }
     }
 }

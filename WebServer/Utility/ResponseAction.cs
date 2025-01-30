@@ -2,13 +2,13 @@
 {
     internal class ResponseAction
     {
-        public bool Status { get; }
+        public bool Successful { get; }
         public object? Function { get; }
         public Type? ReturnType { get; }
 
         public ResponseAction(bool status, object? function, Type? returnType)
         {
-            Status = status;
+            Successful = status;
             Function = function;
             ReturnType = returnType;
         }

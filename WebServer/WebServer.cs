@@ -1,7 +1,7 @@
 ﻿using Logging;
 using System.Net;
+using System.Net.Mime;
 using System.Reflection;
-using System.Text;
 using Webserver.Content;
 using Webserver.Utility;
 
@@ -129,97 +129,92 @@ namespace Webserver
 
         public override async Task ProcessRequest()
         {
-            var defaultPage = GetConfig("DefaultPage") ?? "/Home/Index";
-            string? url = context.Request.RawUrl;
+            var url = GetRequestUrl();
+            var session = sessionManager.GetSession(context.Request.RemoteEndPoint);
+            
+            CheckAuthorization(session);
 
-            if (url == null || url == "/")
-            {
-                url = defaultPage;
-            }
+            var inputParams = await FormDataParser.ParseAsync(Request);
 
-            Session session = sessionManager.GetSession(context.Request.RemoteEndPoint);
-
-            if (session.IsExpired(5))
-            {
-                session.Authorized = false;
-            }
-
-            Stream bodyStream = context.Request.InputStream;
-            Dictionary<string, string>? inputParams = null;
-
-            if (bodyStream != null && !string.IsNullOrEmpty(context.Request.ContentType))
-            {
-                if (context.Request.ContentType == "application/x-www-form-urlencoded")
-                {
-                    StringBuilder body = new StringBuilder();
-
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-
-                    while ((bytesRead = bodyStream.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        body.Append(context.Request.ContentEncoding.GetString(buffer, 0, bytesRead));
-                    }
-                    inputParams = body.ToString().asQuery();
-                }
-            }      
-
-            ResponseAction? response = await router.TryRoute(session, new HttpMethod(context.Request.HttpMethod), url, inputParams);
+            var response = await router.TryRoute(session, new HttpMethod(context.Request.HttpMethod), url, inputParams);
 
             session.UpdateLastConnection();
 
-            if (response.Status)
+            if (response.Successful)
             {
-                if (response.Function != null && response.ReturnType != null)
-                {
-                    if (response.ReturnType == typeof(IActionResult))
-                    {
-                        switch (response.Function)
-                        {
-                            case View:
-                                View view = (View)response.Function;
-                                await SendStringAsync(view.Format(), view.MimeType);
-                                break;
-                            
-                            case Redirect:
-                                Redirect redirect = (Redirect)response.Function;
-                                context.Response.Redirect(redirect.Url);
-                                break;
-
-                            case Error:
-                                Error error = (Error)response.Function;
-                                StatusCode = error.statusCode;
-                                await SendFileAsync(error.Path);
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        await SendStringAsync(response.Function.ToString()!, "text/html");
-                    }
-                }
-                else
-                {
-                    Error error = new Error(HttpStatusCode.NotFound);
-
-                    StatusCode = error.statusCode;
-                    await SendFileAsync(error.Path);
-                }
+                await HandleSuccessfulResponse(response);
             }
             else
             {
-                if (RootFiles.ContainsKey(Path.GetExtension(url)))
-                {
-                    await SendFileAsync(RootFiles[Path.GetExtension(url)] + url);
-                }
-                else
-                {
-                    Error error = new Error(HttpStatusCode.NotFound);
-
-                    StatusCode = error.statusCode;
-                    await SendFileAsync(error.Path);
-                }
+                await HandleNotFoundResponse(url);
             }
         }
+
+        private string GetRequestUrl()
+        {
+            var defaultPage = GetConfig("DefaultPage") ?? "/Home/Index";
+            var url = context.Request.RawUrl;
+
+            if (string.IsNullOrEmpty(url) || url == "/")
+            {
+                url = defaultPage;
+            }
+            return url;
+        }
+
+        private void CheckAuthorization(Session session)
+        {
+            if (!int.TryParse(GetConfig("SessionExpirationHours"), out var expirationTime))
+            {
+                expirationTime = Session.ExpirationHours;
+                logger.Send("Session expiration is missing, using default value.");
+            }
+
+            if (session.IsExpired(expirationTime))
+            {
+                session.Authorized = false;
+            }
+        }
+
+        private async Task HandleSuccessfulResponse(ResponseAction response)
+        {
+            if (response.Function == null || response.ReturnType == null)
+            {
+                await SendErrorAsync(HttpStatusCode.NotFound);
+                return;
+            }
+
+            if (response.ReturnType == typeof(IActionResult))
+            {
+                var actionResult = (IActionResult)response.Function;
+                await actionResult.ExecuteResultAsync(this);
+            }
+            else
+            {
+                await SendStringAsync(response.Function.ToString()!, MediaTypeNames.Text.Html);
+            }
+        }
+
+        private async Task HandleNotFoundResponse(string url)
+        {
+            if (RootFiles.ContainsKey(Path.GetExtension(url)))
+            {
+                await SendFileAsync(RootFiles[Path.GetExtension(url)] + url);
+            }
+            else
+            {
+
+            }
+            {
+                await SendErrorAsync(HttpStatusCode.NotFound);
+            }
+        }
+
+        private async Task SendErrorAsync(HttpStatusCode statusCode)
+        {
+            var error = new Error(statusCode);
+            await error.ExecuteResultAsync(this);
+        }
+
     }
 }

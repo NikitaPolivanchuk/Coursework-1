@@ -2,5 +2,6 @@
 {
     public interface IActionResult
     {
+        Task ExecuteResultAsync(WebServer server);
     }
 }
