@@ -2,6 +2,7 @@
 {
     public class Session
     {
+        public const int ExpirationHours = 1;
 
         public DateTime LastConnection {  get; private set; }
         public bool Authorized { get; set; }

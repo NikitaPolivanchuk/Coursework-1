@@ -15,7 +15,9 @@ namespace Webserver.Content
         };
 
         internal HttpStatusCode statusCode {  get; set; }
+
         internal string Path {  get; set; }
+
         internal Error(HttpStatusCode code)
         {
             if (paths.TryGetValue(code, out string? path))
@@ -28,6 +30,12 @@ namespace Webserver.Content
                 statusCode = HttpStatusCode.NotFound;
                 Path = paths[HttpStatusCode.NotFound];
             }
+        }
+
+        public async Task ExecuteResultAsync(WebServer server)
+        {
+            server.StatusCode = statusCode;
+            await server.SendFileAsync(Path);
         }
     }
 }

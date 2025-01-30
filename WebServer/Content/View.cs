@@ -7,30 +7,33 @@ namespace Webserver.Content
         internal static string AbsolutePath { get; set; } = "";
         public static string[] LayoutArgs { get; set; } = [];
 
-        internal string MimeType { get; }
-        private string Title { get; set; }
-        private string Path { get; set; }
+        private readonly string title;
+        private readonly string path;
         internal string[] Args { get; set; }
 
         internal View(string title, string path, params object[] args)
         {
-            Title = title;
-            Path = $"{AbsolutePath}Views/{path}";
-            MimeType = Mime.GetType(path);
+            this.title = title;
+            this.path = $"{AbsolutePath}Views/{path}";
             Args = args.Select(arg => arg.ToString()).ToArray()!;
         }
 
-        internal string Format()
+        public async Task ExecuteResultAsync(WebServer server)
+        {
+            await server.SendStringAsync(Format(), Mime.GetType(path));
+        }
+
+        private string Format()
         {
             string layout = File.ReadAllText($"{AbsolutePath}Views/_layout.html");
-            string content = File.ReadAllText(Path!);
+            string content = File.ReadAllText(path!);
 
             if (Args != null && Args.Length > 0)
             {
                 content = string.Format(content, Args);
             }
 
-            List<string> args = [Title!];
+            List<string> args = [title!];
             foreach (string arg in LayoutArgs)
             {
                 args.Add(arg);
