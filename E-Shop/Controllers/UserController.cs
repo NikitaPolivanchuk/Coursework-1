@@ -28,13 +28,15 @@ namespace E_Shop.Controllers
         private readonly IProductService _productService;
         private readonly IUserConfirmKeyService _userConfirmKeyService;
         private readonly IHttpContextAccessor _HttpContextAccessor;
+        private readonly IConfigProvider _configProvider;
 
         public UserController(IUserService userService,
                               IOrderItemsService orderItemsService,
                               IOrderService orderService,
                               IProductService productService,
                               IUserConfirmKeyService userConfirmKeyService,
-                              IHttpContextAccessor httpContextAccessor)
+                              IHttpContextAccessor httpContextAccessor,
+                              IConfigProvider configProvider)
         {
             _userService = userService;
             _orderItemsService = orderItemsService;
@@ -42,6 +44,7 @@ namespace E_Shop.Controllers
             _productService = productService;
             _userConfirmKeyService = userConfirmKeyService;
             _HttpContextAccessor = httpContextAccessor;
+            _configProvider = configProvider;
         }
 
         [Endpoint("GET", "User/Register")]
@@ -111,7 +114,7 @@ namespace E_Shop.Controllers
                 _userConfirmKeyService.Add(user.Id, key);
             }
 
-            string from = "wingapo2048@gmail.com";
+            string from = _configProvider.GetSetting("ShopEmail")!;
             string to = user.Email;
 
             MailMessage mail = new MailMessage(from, to);
@@ -252,7 +255,7 @@ namespace E_Shop.Controllers
                 _userConfirmKeyService.Add(user.Id, key);
             }
 
-            string from = "wingapo2048@gmail.com";
+            string from = _configProvider.GetSetting("ShopEmail")!;
             string to = user.Email;
 
             MailMessage mail = new MailMessage(from, to);
