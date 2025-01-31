@@ -7,6 +7,7 @@ using System.Net.Mail;
 using System.Text;
 using Webserver;
 using Webserver.Content;
+using Webserver.Services;
 using Webserver.Utility;
 
 namespace E_Shop.Controllers
@@ -19,6 +20,7 @@ namespace E_Shop.Controllers
         private readonly IProductService _productService;
         private readonly IUserService _userService;
         private readonly IProductKeyService _productKeyService;
+        private readonly IConfigProvider _configProvider;
 
         private readonly string _email_p1;
         private readonly string _email_p2;
@@ -31,7 +33,8 @@ namespace E_Shop.Controllers
                                IOrderService orderService,
                                IProductService productService,
                                IUserService userService,
-                               IProductKeyService productKeyService)
+                               IProductKeyService productKeyService,
+                               IConfigProvider configProvider)
         {
             _cartService = cartService;
             _orderItemsService = orderItemsService;
@@ -168,7 +171,7 @@ namespace E_Shop.Controllers
         {
             User user = _userService.Get(order.UserId)!;
 
-            string from = GetConfig("ShopEmail")!;
+            string from = _configProvider.GetSetting("ShopEmail")!;
             string to = user.Email;
 
             MailMessage mail = new MailMessage(from, to);

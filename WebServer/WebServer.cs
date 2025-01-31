@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Mime;
 using System.Reflection;
 using Webserver.Content;
+using Webserver.Services;
 using Webserver.Utility;
 
 namespace Webserver
@@ -11,12 +12,12 @@ namespace Webserver
     {
         private readonly Router router;
         private readonly SessionManager sessionManager;
-        private readonly ConfigProvider configProvider;
+        private readonly IConfigProvider configProvider;
 
         private readonly Dictionary<Type, object> services;
 
         private readonly Queue<Type> controllersToAdd;
-        private readonly Queue<(Type, Type, bool)> servicesToAdd;
+        private readonly Queue<(Type, Type)> servicesToAdd;
 
         private static readonly Dictionary<string, string> RootFiles = new Dictionary<string, string>()
         {
@@ -34,10 +35,13 @@ namespace Webserver
 
             services = new Dictionary<Type, object>();
 
-            servicesToAdd = new Queue<(Type, Type, bool)>();
+            servicesToAdd = new Queue<(Type, Type)>();
             controllersToAdd = new Queue<Type>();
 
-            configProvider = new ConfigProvider(Path.Combine(hostDir, configPath));
+            ConfigProvider.FilePath = Path.Combine(hostDir, configPath);
+            configProvider = new ConfigProvider();
+
+            AddService<IConfigProvider, ConfigProvider>();
         }
 
         public string? GetConfig(string key)
@@ -51,7 +55,7 @@ namespace Webserver
             {
                 throw new ArgumentException();
             }
-            servicesToAdd.Enqueue((typeof(I), typeof(S), false));
+            servicesToAdd.Enqueue((typeof(I), typeof(S)));
         }
 
         public void AddController<T>() where T : Controller
@@ -61,6 +65,8 @@ namespace Webserver
 
         private bool TryInvokeObject(Type type, out object? obj)
         {
+            services[typeof(IHttpContextAccessor)] = new HttpContextAccessor(context);
+
             foreach (ConstructorInfo constructor in type.GetConstructors())
             {
                 List<object> constructorParams = new List<object>();
@@ -98,7 +104,6 @@ namespace Webserver
                 }
             }
 
-            View.AbsolutePath = AbsolutePath("/");
             Controller.AbsolutePath = AbsolutePath("/");
 
             while (controllersToAdd.Count > 0)
@@ -107,9 +112,6 @@ namespace Webserver
                 if (TryInvokeObject(controllerType, out object? controllerObj))
                 {
                     Controller controller = (Controller)controllerObj!;
-
-                    controller._server = this;
-
                     router.AddCaller(controller.GetType(), controller);
                     
                     foreach (MethodInfo method in controller.GetType().GetMethods())
@@ -187,7 +189,15 @@ namespace Webserver
             if (response.ReturnType == typeof(IActionResult))
             {
                 var actionResult = (IActionResult)response.Function;
-                await actionResult.ExecuteResultAsync(this);
+                actionResult.Logger = logger;
+                var actionContext = new ActionContext()
+                {
+                    Request = Request,
+                    Response = context.Response,
+                    AbsolutePath = AbsolutePath(string.Empty)
+                };
+
+                await actionResult.ExecuteResultAsync(actionContext);
             }
             else
             {
@@ -203,17 +213,20 @@ namespace Webserver
             }
             else
             {
-
-            }
-            {
                 await SendErrorAsync(HttpStatusCode.NotFound);
             }
         }
 
         private async Task SendErrorAsync(HttpStatusCode statusCode)
         {
-            var error = new Error(statusCode);
-            await error.ExecuteResultAsync(this);
+            var error = new ErrorResult(statusCode);
+            var actionContext = new ActionContext()
+            {
+                Request = context.Request,
+                Response = context.Response,
+                AbsolutePath = AbsolutePath(string.Empty)
+            };
+            await error.ExecuteResultAsync(actionContext);
         }
 
     }

@@ -1,7 +1,10 @@
-﻿namespace Webserver.Content
+﻿using Logging;
+
+namespace Webserver.Content
 {
     public interface IActionResult
     {
-        Task ExecuteResultAsync(WebServer server);
+        ILogger Logger { get; set; }
+        Task ExecuteResultAsync(ActionContext context);
     }
 }
