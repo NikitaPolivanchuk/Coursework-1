@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using E_Shop.Data;
 using Webserver.Content;
 using System.Net;
+using Webserver.Services;
 
 namespace E_Shop.Controllers
 {
@@ -26,18 +27,24 @@ namespace E_Shop.Controllers
         private readonly IOrderService _orderService;
         private readonly IProductService _productService;
         private readonly IUserConfirmKeyService _userConfirmKeyService;
+        private readonly IHttpContextAccessor _HttpContextAccessor;
+        private readonly IConfigProvider _configProvider;
 
         public UserController(IUserService userService,
                               IOrderItemsService orderItemsService,
                               IOrderService orderService,
                               IProductService productService,
-                              IUserConfirmKeyService userConfirmKeyService)
+                              IUserConfirmKeyService userConfirmKeyService,
+                              IHttpContextAccessor httpContextAccessor,
+                              IConfigProvider configProvider)
         {
             _userService = userService;
             _orderItemsService = orderItemsService;
             _orderService = orderService;
             _productService = productService;
             _userConfirmKeyService = userConfirmKeyService;
+            _HttpContextAccessor = httpContextAccessor;
+            _configProvider = configProvider;
         }
 
         [Endpoint("GET", "User/Register")]
@@ -108,7 +115,7 @@ namespace E_Shop.Controllers
                 _userConfirmKeyService.Add(confirmKey);
             }
 
-            string from = GetConfig("ShopEmail")!;
+            string from = _configProvider.GetSetting("ShopEmail")!;
             string to = user.Email;
 
             MailMessage mail = new MailMessage(from, to);
@@ -118,7 +125,7 @@ namespace E_Shop.Controllers
             StringBuilder body = new StringBuilder();
             body.Append(File.ReadAllText($"{AbsolutePath}Views/User/conf-email_p1.html"));
             body.Append(string.Format(File.ReadAllText($"{AbsolutePath}Views/User/conf-email_p2.html"),
-                user.Email, Request.UserHostName, key));
+                user.Email, _HttpContextAccessor.Context.Request.UserHostName, key));
 
             mail.Body = body.ToString();
             mail.IsBodyHtml = true;
@@ -250,7 +257,7 @@ namespace E_Shop.Controllers
                 _userConfirmKeyService.Add(confirmKey);
             }
 
-            string from = GetConfig("ShopEmail")!;
+            string from = _configProvider.GetSetting("ShopEmail")!;
             string to = user.Email;
 
             MailMessage mail = new MailMessage(from, to);
@@ -260,7 +267,7 @@ namespace E_Shop.Controllers
             StringBuilder body = new StringBuilder();
             body.Append(File.ReadAllText($"{AbsolutePath}Views/User/reset-psw-email_p1.html"));
             body.Append(string.Format(File.ReadAllText($"{AbsolutePath}Views/User/reset-psw-email_p2.html"),
-                Request.UserHostName, key));
+                _HttpContextAccessor.Context.Request.UserHostName, key));
 
             mail.Body = body.ToString();
             mail.IsBodyHtml = true;

@@ -18,7 +18,6 @@ namespace HttpServer
         protected ILogger logger;
 
         public HttpListenerRequest Request => context.Request;
-        public HttpListenerResponse Response => context.Response;
 
         public HttpStatusCode StatusCode
         {

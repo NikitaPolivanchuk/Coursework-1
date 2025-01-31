@@ -35,7 +35,7 @@ namespace E_Shop.Utility
                 ? CartController.UpdateCartNavbar(int.Parse(session.Properties["id"]))
                 : string.Empty;
 
-            View.LayoutArgs = Args.Values.ToArray();
+            ViewResult.LayoutArgs = Args.Values.ToArray();
         }
     }
 }
