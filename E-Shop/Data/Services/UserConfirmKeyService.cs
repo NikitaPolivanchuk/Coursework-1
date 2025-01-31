@@ -1,4 +1,7 @@
-﻿using E_Shop.Models;
+﻿using DbToolkit;
+using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Models;
 using E_Shop.Services;
 using System.Data;
 
@@ -6,60 +9,69 @@ namespace E_Shop.Data.Services
 {
     internal class UserConfirmKeyService : IUserConfirmKeyService
     {
-        private readonly DbAccess _db;
-        private readonly IUserService _userService;
+        private readonly IDbConnection _connection;
 
-        public UserConfirmKeyService(IUserService userService)
+        public UserConfirmKeyService()
         {
-            _db = DbAccess.GetInstance();
-            _userService = userService;
+            _connection = DbConnectionProvider.GetInstance().Connection;
         }
 
-        public void Add(int userId, string key)
+        public void Add(UserConfirmKey confirmKey)
         {
-            _db.Insert("UserConfirmKeys", ["user_id", "secret_key"], [userId.ToString(), key]);
+            _connection.Insert(confirmKey);
         }
 
         public void Delete(int userId)
         {
-            _db.Delete("UserConfirmKeys", $"user_id={userId}");
+            var query = @"
+                DELETE FROM UserConfirmKeys
+                WHERE user_id = @user_id
+            ";
+            var parameters = new Dictionary<string, object?>()
+            {
+                { "user_id", userId },
+            };
+
+            _connection.Execute(query, parameters);
         }
 
         public User? Get(string key)
         {
-            DataTable data = _db.Select("UserConfirmKeys", ["*"], $"secret_key='{key}'");
-            
-            if (data.Rows.Count < 1)
+            var filters = new Filters();
+            filters.AddFilter("secret_key", SqlOperator.Equal, key);
+
+            var confirmKey = _connection.Select<UserConfirmKey>(filters).FirstOrDefault();
+            if (confirmKey == null)
             {
                 return null;
             }
 
-            User? user = _userService.Get((int)data.Rows[0][0]);
-            return (user == null) ? null : user;
+            filters = new Filters();
+            filters.AddFilter("id", SqlOperator.Equal, confirmKey.UserId);
+            
+            return _connection.Select<User>(filters).FirstOrDefault();
         }
 
         public User? Get(int userId)
         {
-            DataTable data = _db.Select("UserConfirmKeys", ["*"], $"user_id='{userId}'");
+            var filters = new Filters();
+            filters.AddFilter("user_id", SqlOperator.Equal, userId);
 
-            if (data.Rows.Count < 1)
+            var confirmKey = _connection.Select<UserConfirmKey>(filters).FirstOrDefault();
+            if (confirmKey == null)
             {
                 return null;
             }
 
-            User? user = _userService.Get((int)data.Rows[0][0]);
-            return (user == null) ? null : user;
+            filters = new Filters();
+            filters.AddFilter("id", SqlOperator.Equal, confirmKey.UserId);
+
+            return _connection.Select<User>(filters).FirstOrDefault();
         }
 
-        public void Update(int userId, string key)
+        public void Update(UserConfirmKey confirmKey)
         {
-            Dictionary<string, string> data = new Dictionary<string, string>()
-            {
-                { "user_id", userId.ToString() },
-                { "secret_key", key }
-            };
-
-            _db.Update("UserConfirmKeys", data, $"user_id={userId}");
+            _connection.Update(confirmKey);
         }
     }
 }

@@ -181,7 +181,7 @@ namespace E_Shop.Controllers
             StringBuilder tableData = new StringBuilder();
             StringBuilder keys = new StringBuilder();
 
-            OrderItem[] orderItems = _orderItemsService.Get(order.Id);
+            OrderItem[] orderItems = _orderItemsService.GetAll(order.Id);
 
             foreach (OrderItem item in orderItems)
             {
@@ -200,7 +200,7 @@ namespace E_Shop.Controllers
 
                     keys.AppendLine(productKey.Value);
 
-                    _productKeyService.Delete(productKey.Id);
+                    _productKeyService.Delete(productKey);
                     productKeys.Remove(productKey);
                 }
                 keys.AppendLine();

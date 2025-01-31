@@ -14,7 +14,7 @@ internal class Program
             configPath: "appsettings.json"
         );
 
-        DbAccess.ConnectionString = server.GetConfig("ConnectionString");
+        DbConnectionProvider.ConnectionString = server.GetConfig("ConnectionString");
         EmailSender.Initialize(
             host: server.GetConfig("SmtpHost")!,
             username: server.GetConfig("SmtpUsername")!,

@@ -18,7 +18,7 @@ namespace E_Shop.Controllers
         private static readonly string _total =
             File.ReadAllText($"{AbsolutePath}Views/Cart/_total.html");
 
-        private static ICartService _cartServiceSt = new CartService(new ProductService());
+        private static ICartService _cartServiceSt = new CartService();
 
         private readonly string _body;
         private readonly string _cartItem;

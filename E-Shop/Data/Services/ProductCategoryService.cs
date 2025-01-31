@@ -1,4 +1,7 @@
-﻿using E_Shop.Models;
+﻿using DbToolkit;
+using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Models;
 using E_Shop.Services;
 using System.Data;
 
@@ -6,55 +9,58 @@ namespace E_Shop.Data.Services
 {
     internal class ProductCategoryService : IProductCategoryService
     {
-        private readonly DbAccess _db;
-        private readonly ICategoryService _categoryService;
-        private readonly IProductService _productService;
+        private readonly IDbConnection _connection;
 
-        public ProductCategoryService(ICategoryService categoryService, IProductService productService)
+        public ProductCategoryService()
         {
-            _db = DbAccess.GetInstance();
-            _categoryService = categoryService;
-            _productService = productService;
+            _connection = DbConnectionProvider.GetInstance().Connection;
         }
 
-        public void Add(int productId, int categoryId)
+        public void Add(ProductCategory productCategory)
         {
-            _db.Insert("Product_Category", ["product_id", "category_id"],
-                [productId.ToString(), categoryId.ToString()]);
+            _connection.Insert(productCategory);
         }
 
         public Category[] GetCategories(int productId)
         {
-            List<Category> categories = new List<Category>();
+            var filters = new Filters();
+            filters.AddFilter("product_id", SqlOperator.Equal, productId);
 
-            DataTable categoryIds = _db.Select("Product_Category", ["category_id"], $"product_id={productId}");
+            var productCategoryList = _connection.Select<ProductCategory>(filters);
+            var categories = new List<Category>();
             
-            foreach (DataRow CategoryId in categoryIds.Rows)
+            foreach (var productCategory in productCategoryList)
             {
-                Category? category = _categoryService.Get((int)CategoryId[0]);
-                if (category == null)
+                filters = new Filters();
+                filters.AddFilter("id", SqlOperator.Equal, productCategory.CategoryId);
+
+                var category = _connection.Select<Category>(filters).FirstOrDefault();
+                if (category != null)
                 {
-                    break;
+                    categories.Add(category);
                 }
-                categories.Add(category);
             }
             return categories.ToArray();
         }
 
         public Product[] GetProducts(int categoryId)
         {
-            List<Product> products = new List<Product>();
+            var filters = new Filters();
+            filters.AddFilter("category_id", SqlOperator.Equal, categoryId);
 
-            DataTable productIds = _db.Select("Product_Category", ["product_id"], $"category_id={categoryId}");
+            var productCategoryList = _connection.Select<ProductCategory>(filters);
+            var products = new List<Product>();
 
-            foreach (DataRow productId in productIds.Rows)
+            foreach (var productCategory in productCategoryList)
             {
-                Product? product = _productService.Get((int)productId[0]);
-                if (product == null)
+                filters = new Filters();
+                filters.AddFilter("id", SqlOperator.Equal, productCategory.ProductId);
+
+                var product = _connection.Select<Product>(filters).FirstOrDefault();
+                if (product != null)
                 {
-                    break;
+                    products.Add(product);
                 }
-                products.Add(product);
             }
             return products.ToArray();
         }

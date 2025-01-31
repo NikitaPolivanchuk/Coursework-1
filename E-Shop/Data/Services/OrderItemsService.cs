@@ -1,4 +1,7 @@
-﻿using E_Shop.Models;
+﻿using DbToolkit;
+using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Models;
 using E_Shop.Services;
 using System.Data;
 
@@ -6,36 +9,29 @@ namespace E_Shop.Data.Services
 {
     internal class OrderItemsService : IOrderItemsService
     {
-        private readonly DbAccess _db;
+        private readonly IDbConnection _connection;
 
         public OrderItemsService()
         {
-            _db = DbAccess.GetInstance();
+            _connection = DbConnectionProvider.GetInstance().Connection;
         }
 
         public void Add(OrderItem item)
         {
-            _db.Insert("OrderItems", ["order_id", "product_id", "number"],
-               [item.OrderId.ToString(), item.ProductId.ToString(), item.Number.ToString()]);
+            _connection.Insert(item);
         }
 
-        public OrderItem[] Get(int orderId)
+        public OrderItem[] GetAll(int orderId)
         {
-            DataTable data = _db.Select("OrderItems", ["*"], $"order_id={orderId}");
+            var filters = new Filters();
+            filters.AddFilter("order_id", SqlOperator.Equal, orderId);
 
-            List<OrderItem> items = new List<OrderItem>();
-
-            foreach (DataRow row in data.Rows)
-            {
-                items.Add(new OrderItem(row));
-            }
-
-            return items.ToArray();
+            return _connection.Select<OrderItem>(filters).ToArray();
         }
 
-        public void Delete(int orderId)
+        public void Delete(OrderItem item)
         {
-            _db.Delete("OrderItems", $"order_id={orderId}");
+            _connection.Delete(item);
         }
     }
 }

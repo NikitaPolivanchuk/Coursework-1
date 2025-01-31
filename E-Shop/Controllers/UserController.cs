@@ -104,14 +104,15 @@ namespace E_Shop.Controllers
         private void _SendConfirmEmail(User user)
         {
             string key = _GetHash(user);
+            var confirmKey = new UserConfirmKey(user.Id, key);
 
             if (_userConfirmKeyService.Get(user.Id) != null)
             {
-                _userConfirmKeyService.Update(user.Id, key);
+                _userConfirmKeyService.Update(confirmKey);
             }
             else
             {
-                _userConfirmKeyService.Add(user.Id, key);
+                _userConfirmKeyService.Add(confirmKey);
             }
 
             string from = _configProvider.GetSetting("ShopEmail")!;
@@ -245,14 +246,15 @@ namespace E_Shop.Controllers
         private void _SendResetPswEmail(User user)
         {
             string key = _GetHash(user);
+            var confirmKey = new UserConfirmKey(user.Id, key);
 
             if (_userConfirmKeyService.Get(user.Id) != null)
             {
-                _userConfirmKeyService.Update(user.Id, key);
+                _userConfirmKeyService.Update(confirmKey);
             }
             else
             {
-                _userConfirmKeyService.Add(user.Id, key);
+                _userConfirmKeyService.Add(confirmKey);
             }
 
             string from = _configProvider.GetSetting("ShopEmail")!;
@@ -359,7 +361,7 @@ namespace E_Shop.Controllers
 
                 foreach ( Order order in orders )
                 {
-                    OrderItem[] orderItems = _orderItemsService.Get(order.Id);
+                    OrderItem[] orderItems = _orderItemsService.GetAll(order.Id);
                     List<string> items = new List<string>();
 
                     foreach( OrderItem item in orderItems )

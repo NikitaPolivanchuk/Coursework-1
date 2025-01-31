@@ -4,7 +4,7 @@ namespace E_Shop.Data.Services
 {
     internal interface IProductCategoryService
     {
-        public void Add(int productId, int categoryId);
+        public void Add(ProductCategory productCategory);
         public Category[] GetCategories(int productId);
         public Product[] GetProducts(int categoryId);
     }

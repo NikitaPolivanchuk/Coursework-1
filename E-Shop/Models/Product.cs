@@ -1,15 +1,32 @@
-﻿using System.Data;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 
 namespace E_Shop.Models
 {
+    [Table("Products")]
     internal class Product
     {
+        [Column("id")]
+        [Key]
         public int Id { get; set; }
+
+        [Column("name")]
         public string Name { get; set; }
+
+        [Column("price")]
         public double Price { get; set; }
+
+        [Column("number")]
         public int Number {  get; set; }
+
+        [Column("image_url")]
         public string ImageUrl { get; set; }
+
+        [Column("description")]
         public string Description { get; set; }
+
+        public Product() { }
 
         public Product(Dictionary<string, string> data)
         {

@@ -1,12 +1,23 @@
-﻿using System.Data;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 
 namespace E_Shop.Models
 {
+    [Table("Categories")]
     internal class Category
     {
+        [Column("id")]
+        [Key]
         public int Id { get; set; }
+
+        [Column("name")]
         public string Name { get; set; }
+
+        [Column("description")]
         public string Description { get; set; }
+
+        public Category() { }
 
         public Category(string name, string description)
         {

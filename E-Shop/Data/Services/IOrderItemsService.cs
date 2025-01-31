@@ -5,7 +5,7 @@ namespace E_Shop.Data.Services
     internal interface IOrderItemsService
     {
         public void Add(OrderItem item);
-        public OrderItem[] Get(int orderId);
-        public void Delete(int orderId);
+        public OrderItem[] GetAll(int orderId);
+        public void Delete(OrderItem item);
     }
 }

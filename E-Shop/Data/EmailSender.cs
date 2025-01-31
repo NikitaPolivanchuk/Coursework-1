@@ -17,8 +17,6 @@ namespace E_Shop.Data
             };
         }
 
-         
-
         public void Send(MailMessage message)
         {
             try
