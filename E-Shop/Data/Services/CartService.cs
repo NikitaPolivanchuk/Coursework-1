@@ -1,4 +1,7 @@
-﻿using E_Shop.Models;
+﻿using DbToolkit;
+using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Models;
 using E_Shop.Services;
 using System.Data;
 
@@ -6,85 +9,115 @@ namespace E_Shop.Data.Services
 {
     internal class CartService : ICartService
     {
-        private readonly DbAccess _db;
-        private readonly IProductService _productService;
+        private readonly IDbConnection _connection;
 
-        public CartService(IProductService productService)
+        public CartService()
         {
-            _db = DbAccess.GetInstance();
-            _productService = productService;
+            _connection = DbConnectionProvider.GetInstance().Connection;
         }
 
         public void Add(int userId, int productId)
         {
-            DataTable data = _db.Select("CartItems", ["number"],
-                $"user_id={userId} AND product_id={productId}");
+            var filters = new Filters();
+            filters.AddFilter("user_id", SqlOperator.Equal, userId);
+            filters.AddFilter("product_id", SqlOperator.Equal, productId);
 
-            if (data.Rows.Count < 1)
+            var cartItem = _connection.Select<CartItem>(filters).FirstOrDefault();
+
+            if (cartItem == null)
             {
-                _db.Insert("CartItems", ["user_id", "product_id", "number"],
-                    [userId.ToString(), productId.ToString(), "1"]);
+                var query = @"
+                    INSERT INTO CartItems(user_id, product_id, number)
+                    VALUES(@user_id, @product_id, @number)
+                ";
+                var parameters = filters.ToDictionary();
+                parameters.Add("number", 1);
+
+                _connection.Execute(query, parameters);
             }
             else
             {
-                int number = (int)data.Rows[0][0] + 1;
+                var query = @"
+                    UPDATE CartItems
+                    SET number = @number
+                    WHERE product_id = @product_id AND user_id = @user_id
+                ";
+                var parameters = filters.ToDictionary();
+                parameters.Add("number", cartItem.Number + 1);
 
-                Dictionary<string, string> newData = new Dictionary<string, string>()
-                {
-                    {"number", number.ToString()}
-                };
-
-                _db.Update("CartItems", newData, $"user_id={userId} AND product_id={productId}");
+                _connection.Execute(query, parameters);
             }           
         }
 
         public Dictionary<Product, int> GetCartItems(int userId)
         {
-            Dictionary<Product, int> cartItems = new Dictionary<Product, int>();
+            var result = new Dictionary<Product, int>();
 
-            DataTable data = _db.Select("CartItems", ["product_id", "number"], $"user_id={userId}");
+            var filters = new Filters();
+            filters.AddFilter("user_id", SqlOperator.Equal, userId);
+            var cartItems = _connection.Select<CartItem>(filters);
 
-            foreach (DataRow row in data.Rows)
+            foreach (var cartItem in cartItems)
             {
-                Product? product = _productService.Get((int)row[0]);
+                filters = new Filters();
+                filters.AddFilter("id", SqlOperator.Equal, cartItem.ProductId);
+                var product = _connection.Select<Product>(filters).FirstOrDefault();
 
                 if (product != null)
                 {
-                    cartItems[product] = (int)row[1];
+                    result[product] = cartItem.Number;
                 }
             }
-            return cartItems;
+            return result;
         }
 
         public void Delete(int userId, int productId)
         {
-            DataTable data = _db.Select("CartItems", ["number"],
-                $"user_id={userId} AND product_id={productId}");
+            var filters = new Filters();
+            filters.AddFilter("user_id", SqlOperator.Equal, userId);
+            filters.AddFilter("product_id", SqlOperator.Equal, productId);
 
-            if (data.Rows.Count < 1)
+            var cartItem = _connection.Select<CartItem>(filters).FirstOrDefault();
+            if (cartItem == null)
             {
                 return;
             }
 
-            int number = (int)data.Rows[0][0] - 1;
+            cartItem.Number -= 1;
 
-            if (number < 1)
+            if (cartItem.Number < 1)
             {
-                _db.Delete("CartItems", $"user_id={userId} AND product_id={productId}");
+                var query = @"
+                    DELETE FROM CartItems
+                    WHERE user_id = @user_id AND product_id = @product_id
+                ";
+                _connection.Execute(query, filters.ToDictionary());
             }
             else
             {
-                Dictionary<string, string> newData = new Dictionary<string, string>()
-                {
-                    {"number", number.ToString()}
-                };
+                var query = @"
+                    UPDATE CartItems
+                    SET number = @number
+                    WHERE user_id = @user_id AND product_id = @product_id
+                ";
+                var parameters = filters.ToDictionary();
+                parameters["number"] = cartItem.Number;
 
-                _db.Update("CartItems", newData, $"user_id={userId} AND product_id={productId}");
+                _connection.Execute(query, parameters);
             }
         }
         public void DeleteAll(int userId)
         {
-            _db.Delete("CartItems", $"user_id={userId}");
+            var query = @"
+                DELETE FROM CartItems
+                WHERE user_id = @user_id
+            ";
+            var parameters = new Dictionary<string, object?>()
+            {
+                {"user_id", userId},
+            };
+
+            _connection.Execute(query, parameters);
         }
     }
 }

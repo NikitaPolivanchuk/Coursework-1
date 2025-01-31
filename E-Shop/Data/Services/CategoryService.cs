@@ -1,4 +1,7 @@
-﻿using E_Shop.Models;
+﻿using DbToolkit;
+using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Models;
 using E_Shop.Services;
 using System.Data;
 
@@ -6,66 +9,53 @@ namespace E_Shop.Data.Services
 {
     internal class CategoryService : ICategoryService
     {
-        private readonly DbAccess _db;
+        private readonly IDbConnection _connection;
 
         public CategoryService()
         {
-            _db = DbAccess.GetInstance();
+            _connection = DbConnectionProvider.GetInstance().Connection;
         }
 
         public void Add(Category category)
         {
-            _db.Insert("Categories", ["name", "description"], [category.Name, category.Description]);
+            _connection.Insert(category);
         }
 
         public void Delete(int id)
         {
-            _db.Delete("Categories", $"id={id}");
+            _connection.Delete(id);
         }
 
         public Category? Get(int id)
         {
-            return _Get($"id={id}");
+            var filters = new Filters();
+            filters.AddFilter("id", SqlOperator.Equal, id);
+
+            return Get(filters);
         }
 
         public Category? Get(string name)
         {
-            return _Get($"name='{name}'");
+            var filters = new Filters();
+            filters.AddFilter("name", SqlOperator.Equal, name);
+
+            return Get(filters);
         }
 
-        private Category? _Get (string condition)
+        private Category? Get (Filters filters)
         {
-            DataTable data = _db.Select("Categories", ["*"], condition);
-
-            if (data.Rows.Count < 1)
-            {
-                return null;
-            }
-            return new Category(data.Rows[0]);
+            return _connection.Select<Category>(filters).FirstOrDefault();
         }
 
         public Category[] GetAll()
         {
-            DataTable data = _db.Select("Categories", ["*"]);
-
-            List<Category> categories = new List<Category>();
-
-            foreach (DataRow row in data.Rows)
-            {
-                categories.Add(new Category(row));
-            }
-            return categories.ToArray();
+            return _connection.Select<Category>().ToArray();
         }
 
         public void Update(int id, Category category)
         {
-            Dictionary<string, string> dic = new Dictionary<string, string>
-            {
-                { "name", category.Name },
-                { "description", category.Description }
-            };
-
-            _db.Update("Categories", dic, $"id={id}");
+            category.Id = id;
+            _connection.Update(category);
         }
     }
 }

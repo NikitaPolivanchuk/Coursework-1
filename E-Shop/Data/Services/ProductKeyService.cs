@@ -1,4 +1,7 @@
-﻿using E_Shop.Models;
+﻿using DbToolkit;
+using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Models;
 using E_Shop.Services;
 using System.Data;
 
@@ -6,41 +9,37 @@ namespace E_Shop.Data.Services
 {
     internal class ProductKeyService : IProductKeyService
     {
-        private readonly DbAccess _db = DbAccess.GetInstance();
+        private readonly IDbConnection _connection;
+
+        public ProductKeyService()
+        {
+            _connection = DbConnectionProvider.GetInstance().Connection;
+        }
 
         public void Add(ProductKey productKey)
         {
-            _db.Insert("ProductKeys", ["product_id", "value"],
-                [productKey.ProductId.ToString(), productKey.Value]);
+            _connection.Insert(productKey);
         }
 
         public ProductKey? Get(int id)
         {
-            DataTable data = _db.Select("ProductKeys", ["*"], $"id={id}");
+            var filters = new Filters();
+            filters.AddFilter("id", SqlOperator.Equal, id);
 
-            if (data.Rows.Count < 1 )
-            {
-                return null;
-            }
-            return new ProductKey(data.Rows[0]);
+            return _connection.Select<ProductKey>(filters).FirstOrDefault();
         }
 
-        public void Delete(int id)
+        public void Delete(ProductKey productKey)
         {
-            _db.Delete("ProductKeys", $"id={id}");
+            _connection.Delete(productKey);
         }
 
         public ProductKey[] GetAll(int productId)
         {
-            List<ProductKey> productKeys = new List<ProductKey>();
-            DataTable data = _db.Select("ProductKeys", ["*"], $"product_id={productId}");
-            
-            foreach (DataRow row in data.Rows)
-            {
-                productKeys.Add(new ProductKey(row));
-            }
+            var filters = new Filters();
+            filters.AddFilter("product_id", SqlOperator.Equal, productId);
 
-            return productKeys.ToArray();
+            return _connection.Select<ProductKey>(filters).ToArray();
         }
     }
 }

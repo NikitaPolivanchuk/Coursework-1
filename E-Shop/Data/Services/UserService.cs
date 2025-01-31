@@ -1,4 +1,7 @@
-﻿using E_Shop.Models;
+﻿using DbToolkit;
+using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Models;
 using E_Shop.Services;
 using System.Data;
 
@@ -6,67 +9,60 @@ namespace E_Shop.Data.Services
 {
     internal class UserService : IUserService
     {
-        private readonly DbAccess _db;
+        private readonly IDbConnection _connection;
 
         public UserService()
         {
-            _db = DbAccess.GetInstance();
+            _connection = DbConnectionProvider.GetInstance().Connection;
         }
 
         public void Add(User user)
         {
-            _db.Insert("Users", ["username", "email", "password", "access_level", "verified"],
-                [user.Username, user.Email, user.Password, user.AccessLevel, user.Verified.ToString()]);
+            _connection.Insert(user);
         }
 
         public User? Get(int id)
         {
-            return _Get($"id={id}");
+            var filters = new Filters();
+            filters.AddFilter("id", SqlOperator.Equal, id);
+
+            return Get(filters);
         }
 
         public User? Get(string email)
         {
-            return _Get($"email='{email}'");
+            var filters = new Filters();
+            filters.AddFilter("email", SqlOperator.Equal, email);
+
+            return Get(filters);
         }
 
         public User? Get(string email, string password)
         {
-            return _Get($"email='{email}' AND password='{password}'");
+            var filters = new Filters();
+            filters.AddFilter("email", SqlOperator.Equal, email);
+            filters.AddFilter("id", SqlOperator.Equal, email);
+
+            return Get(filters);
         }
+
         public User[] GetAll(string accessLevel)
         {
-            DataTable data = _db.Select("Users", ["*"], $"access_level='{accessLevel}'");
-            List<User> users = new List<User>();
+            var filters = new Filters();
+            filters.AddFilter("access_level", SqlOperator.Equal, accessLevel);
 
-            foreach (DataRow row in data.Rows)
-            {
-                users.Add(new User(row));
-            }
-            return users.ToArray();
+            return _connection.Select<User>(filters).ToArray();
         }
 
         public void Update(int id, User user)
         {
-            Dictionary<string, string> data = new Dictionary<string, string>()
-            {
-                {"username", user.Username},
-                {"password", user.Password},
-                {"verified", user.Verified.ToString() }
-            };
-
-            _db.Update("Users", data, $"id={id}");
+            user.Id = id;
+            _connection.Update(user);
         }
 
-        private User? _Get(string condition)
+        private User? Get(Filters filters)
         {
-            DataTable table = _db.Select("Users", ["*"], condition);
-
-            if (table.Rows.Count < 1)
-            {
-                return null;
-            }
-
-            return new User(table.Rows[0]);
+            return _connection.Select<User>(filters).FirstOrDefault();
         }
     }
 }

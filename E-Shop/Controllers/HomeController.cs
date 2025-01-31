@@ -1,4 +1,6 @@
-﻿using E_Shop.Data.Services;
+﻿using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Data.Services;
 using E_Shop.Models;
 using E_Shop.Utility;
 using System.Text;
@@ -54,7 +56,10 @@ namespace E_Shop.Controllers
         [Endpoint("GET", "Home/Search")]
         public IActionResult Search(Session session, string name)
         {
-            Product[] products = _productService.GetAll($"%{name}%");
+            var filters = new Filters();
+            filters.AddFilter("name", SqlOperator.Like, $"%{name}%");
+
+            Product[] products = _productService.GetAll(filters);
 
             StringBuilder cards = new StringBuilder();
 

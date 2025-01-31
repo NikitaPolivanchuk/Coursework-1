@@ -1,15 +1,32 @@
-﻿using System.Data;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 
 namespace E_Shop.Models
 {
+    [Table("Users")]
     internal class User
     {
+        [Column("id")]
+        [Key]
         public int Id { get; set; }
+
+        [Column("username")]
         public string Username { get; set; }
+
+        [Column("email")]
         public string Email { get; set; }
+
+        [Column("password")]
         public string Password { get; set; }
+
+        [Column("access_level")]
         public string AccessLevel { get; set; }
+
+        [Column("verified")]
         public bool Verified { get; set; }
+
+        public User() { }
 
         public User(DataRow data)
         {

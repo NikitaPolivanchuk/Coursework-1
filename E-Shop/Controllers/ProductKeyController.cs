@@ -96,7 +96,7 @@ namespace E_Shop.Controllers
                 return Error(HttpStatusCode.NotFound);
             }
 
-            _productKeyService.Delete(productKey.Id);
+            _productKeyService.Delete(productKey);
 
             if (product.Number > 0)
             {

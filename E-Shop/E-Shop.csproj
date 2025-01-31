@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DbToolkit\DbToolkit.csproj" />
     <ProjectReference Include="..\Webserver\Webserver.csproj" />
   </ItemGroup>
 

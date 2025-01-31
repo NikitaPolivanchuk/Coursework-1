@@ -184,7 +184,8 @@ namespace E_Shop.Controllers
                     {
                         if (!string.IsNullOrEmpty(categoryId))
                         {
-                            _productCategoryService.Add(product.Id, int.Parse(categoryId));
+                            var productCategory = new ProductCategory(product.Id, int.Parse(categoryId));
+                            _productCategoryService.Add(productCategory);
                         }
                     }
                 }
@@ -319,7 +320,7 @@ namespace E_Shop.Controllers
                 return Error(HttpStatusCode.NotFound);
             }
 
-            _productService.Delete(id);
+            _productService.Delete(product);
 
             return Redirect("../Index");
         }

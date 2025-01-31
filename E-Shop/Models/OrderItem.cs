@@ -1,13 +1,26 @@
-﻿using System.Data;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 
 namespace E_Shop.Models
 {
+    [Table("OrderItems")]
     internal class OrderItem
     {
+        [Column("id")]
+        [Key]
         public int Id { get; set; }
+
+        [Column("order_id")]
         public int OrderId { get; set; }
+
+        [Column("product_id")]
         public int ProductId { get; set; }
+
+        [Column("number")]
         public int Number { get; set; }
+
+        public OrderItem() { }
 
         public OrderItem(int orderId, int productId, int number)
         {

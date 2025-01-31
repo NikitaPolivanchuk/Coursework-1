@@ -1,4 +1,7 @@
-﻿using E_Shop.Models;
+﻿using DbToolkit;
+using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Models;
 using E_Shop.Services;
 using System.Data;
 
@@ -6,80 +9,78 @@ namespace E_Shop.Data.Services
 {
     internal class ProductService : IProductService
     {
-        private readonly DbAccess _db;
+        private readonly IDbConnection _connection;
 
         public ProductService()
         {
-            _db = DbAccess.GetInstance();
+            _connection = DbConnectionProvider.GetInstance().Connection;
         }
 
         public void Add(Product product)
         {
-            _db.Insert("Products", ["name", "price", "number", "image_url", "description"],
-                [product.Name, product.Price.ToString(), product.Number.ToString(), product.ImageUrl, product.Description]);
+            _connection.Insert(product);
         }
 
         public Product? Get(int id)
         {
-            return _Get($"id={id}");
+            var filters = new Filters();
+            filters.AddFilter("id", SqlOperator.Equal, id);
+
+            return Get(filters);
         }
 
         public Product? Get(string name)
         {
-            return _Get($"name='{name}'");
+            var filters = new Filters();
+            filters.AddFilter("name", SqlOperator.Equal, name);
+
+            return Get(filters);
         }
 
-        private Product? _Get(string condition)
+        private Product? Get(Filters filters)
         {
-            DataTable data = _db.Select("Products", ["*"], condition);
-
-            if (data.Rows.Count < 1)
-            {
-                return null;
-            }
-            return new Product(data.Rows[0]);
+            return _connection.Select<Product>(filters).FirstOrDefault();
         }
 
-        public Product[] GetAll(string? filter = null)
+        public Product[] GetAll(Filters? filter = null)
         {
-            string? column = (filter != null) ? "name" : null;
-
-            DataTable data = _db.Select("Products", ["*"], column, filter);
-
-            List<Product> products = new List<Product>();
-
-            foreach (DataRow row in data.Rows)
-            {
-                products.Add(new Product(row));
-            }
-            return products.ToArray();
+            return _connection.Select<Product>(filter).ToArray();
         }
 
-        public void Delete(int id)
+        public void Delete(Product product)
         {
-            _db.Delete("Products", $"id={id}");
+            _connection.Delete(product);
         }
 
         public void Update(int id, Product product, string[] categoryIds)
         {
-            Dictionary<string, string> data = new Dictionary<string, string>()
+            product.Id = id;
+            _connection.Update(product);
+
+            var query = @"
+                DELETE FROM Product_Category
+                WHERE product_id = @id
+            ";
+            var parameters = new Dictionary<string, object?>()
             {
-                {"name", product.Name },
-                {"price", product.Price.ToString()},
-                {"image_url", product.ImageUrl },
-                {"description", product.Description}
+                { "id", id }
             };
+            _connection.Execute("DELETE FROM Product_Category WHERE product_id = @id", parameters);
 
-            _db.Update("Products", data, $"id={id}");
-
-            _db.Delete("Product_Category", $"product_id={id}");
+            query = @"
+                INSERT INTO Product_Category(product_id, category_id)
+                VALUES(@productId, @categoryId)
+            ";
+            parameters = new Dictionary<string, object?>();
 
             foreach (string categoryId in categoryIds)
             {
                 if (!string.IsNullOrEmpty(categoryId))
                 {
-                    _db.Insert("Product_Category", ["product_id", "category_id"],
-                        [id.ToString(), categoryId]);
+                    parameters["productId"] = id;
+                    parameters["categoryId"] = categoryId;
+
+                    _connection.Execute(query, parameters);
                 }
             }
             
@@ -87,16 +88,8 @@ namespace E_Shop.Data.Services
 
         public void Update(int id, Product product)
         {
-            Dictionary<string, string> data = new Dictionary<string, string>()
-            {
-                {"name", product.Name },
-                {"price", product.Price.ToString()},
-                {"number", product.Number.ToString()},
-                {"image_url", product.ImageUrl },
-                {"description", product.Description}
-            };
-
-            _db.Update("Products", data, $"id={id}");
+            product.Id = id;
+            _connection.Update(product);
         }
     }
 }

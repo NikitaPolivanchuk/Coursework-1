@@ -1,4 +1,8 @@
-﻿using E_Shop.Models;
+﻿using DbToolkit;
+using DbToolkit.Enums;
+using DbToolkit.Filtering;
+using E_Shop.Data.Enums;
+using E_Shop.Models;
 using E_Shop.Services;
 using System.Data;
 
@@ -6,60 +10,51 @@ namespace E_Shop.Data.Services
 {
     internal class OrderService : IOrderService
     {
-        private readonly DbAccess _db;
+        private readonly IDbConnection _connection;
 
         public OrderService()
         {
-            _db = DbAccess.GetInstance();
+            _connection = DbConnectionProvider.GetInstance().Connection;
         }
 
         public void Add(Order order)
         {
-            _db.Insert("Orders", ["user_id", "total_cost", "status"],
-                [order.UserId.ToString(), order.TotalCost.ToString(), order.Status]);
+            _connection.Insert(order);
         }
         public Order? Get(int userId)
         {
-            return _Get($"user_id={userId}");
+            var filters = new Filters(LogicalOperator.And);
+            filters.AddFilter("user_id", SqlOperator.Equal, userId);
+
+            return Get(filters);
         }
 
         public Order? GetCurrent(int userId)
         {
-            return _Get($"user_id={userId} AND status='Active'");
+            var filters = new Filters();
+            filters.AddFilter("user_id", SqlOperator.Equal, userId);
+            filters.AddFilter("status", SqlOperator.Equal, OrderStatus.Active.ToString());
+
+            return Get(filters);
         }
 
-        private Order? _Get(string condition)
+        private Order? Get(Filters filters)
         {
-            DataTable data = _db.Select("Orders", ["*"], condition);
-
-            if (data.Rows.Count < 1)
-            {
-                return null;
-            }
-
-            return new Order(data.Rows[0]);
+            return _connection.Select<Order>(filters).FirstOrDefault();
         }
 
         public void Update(int id, Order order)
         {
-            Dictionary<string, string> updated = new Dictionary<string, string>()
-            {
-                {"status",  order.Status}
-            };
-
-            _db.Update("Orders", updated, $"id={id}");
+            order.Id = id;
+            _connection.Update(order);
         }
 
         public Order[] GetAll(int userId)
         {
-            List<Order> orders = new List<Order>();
-            DataTable data = _db.Select("Orders", ["*"], $"user_id={userId}");
+            var filters = new Filters();
+            filters.AddFilter("user_id", SqlOperator.Equal, userId);
 
-            foreach (DataRow row in data.Rows)
-            {
-                orders.Add(new Order(row));
-            }
-            return orders.ToArray();
+            return _connection.Select<Order>(filters).ToArray();
         }
     }
 }
