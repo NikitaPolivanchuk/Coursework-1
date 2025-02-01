@@ -8,37 +8,38 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var server = new WebServer(
-            hostUrl: "http://localhost:8080/",
-            hostDir: GetProjectPath(),
-            configPath: "appsettings.json"
-        );
+        var builder = new WebServerBuilder();
 
-        DbConnectionProvider.ConnectionString = server.GetConfig("ConnectionString");
-        EmailSender.Initialize(
-            host: server.GetConfig("SmtpHost")!,
-            username: server.GetConfig("SmtpUsername")!,
-            password: server.GetConfig("SmtpPassword")!
-        );
+        builder.SetHostUrl("http://localhost:8080/");
+        builder.SetHostDir(GetProjectPath());
+        builder.SetConfigPath("appSettings.json");
 
-        server.AddService<IUserService, UserService>();
-        server.AddService<ICategoryService, CategoryService>();
-        server.AddService<IProductService, ProductService>();
-        server.AddService<IProductCategoryService, ProductCategoryService>();
-        server.AddService<ICartService, CartService>();
-        server.AddService<IOrderItemsService, OrderItemsService>();
-        server.AddService<IOrderService, OrderService>();
-        server.AddService<IUserConfirmKeyService, UserConfirmKeyService>();
-        server.AddService<IProductKeyService, ProductKeyService>();
+        builder.Services.AddSingleton(() => new DbConnectionProvider(builder.Configuration));
+        builder.Services.AddSingleton(() => new EmailService(builder.Configuration));
 
-        server.AddController<HomeController>();
-        server.AddController<UserController>();
-        server.AddController<CategoryController>();
-        server.AddController<ProductsController>();
-        server.AddController<CartController>();
-        server.AddController<OrderController>();
-        server.AddController<PaymentController>();
-        server.AddController<ProductKeyController>();
+        builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<ICategoryService, CategoryService>();
+        builder.Services.AddScoped<IProductService, ProductService>();
+        builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+        builder.Services.AddScoped<ICartService, CartService>();
+        builder.Services.AddScoped<IOrderItemsService, OrderItemsService>();
+        builder.Services.AddScoped<IOrderService, OrderService>();
+        builder.Services.AddScoped<IOrderItemsService, OrderItemsService>();
+        builder.Services.AddScoped<IUserConfirmKeyService, UserConfirmKeyService>();
+        builder.Services.AddScoped<IProductKeyService, ProductKeyService>();
+
+        builder.Services.AddSingleton(() => new LayoutBuilder(builder.BuildServiceProvider()));
+
+        builder.AddController<HomeController>();
+        builder.AddController<UserController>();
+        builder.AddController<CategoryController>();
+        builder.AddController<ProductsController>();
+        builder.AddController<CartController>();
+        builder.AddController<OrderController>();
+        builder.AddController<PaymentController>();
+        builder.AddController<ProductKeyController>();
+
+        var server = builder.Build();
 
         server.Run();
     }

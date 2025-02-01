@@ -4,7 +4,7 @@
 namespace E_Shop.Models
 {
     [Table("Product_Category")]
-    internal class ProductCategory
+    public class ProductCategory
     {
         [Column("product_id")]
         public int ProductId { get; set; }

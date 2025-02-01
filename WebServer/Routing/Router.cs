@@ -1,7 +1,8 @@
 ﻿using System.Reflection;
+using Webserver.Sessions;
 using Webserver.Utility;
 
-namespace Webserver
+namespace Webserver.Routing
 {
     internal class Router
     {
@@ -22,11 +23,11 @@ namespace Webserver
             public Method? Method { get; set; }
             private Dictionary<string, Node>? SubNodes { get; set; }
             private Dictionary<Type, Node>? ArgSubNodes { get; set; }
-            
+
             public Node(string name)
             {
                 Name = name;
-            } 
+            }
 
             public void AddSubNode(string name, Node node)
             {
@@ -122,7 +123,7 @@ namespace Webserver
                     ArgType argType = ArgType.GetArgType(typeStr);
 
                     next = current.TryGetArgSubNode(argType.Type, out Node? argNode)
-                        ? argNode 
+                        ? argNode
                         : new Node(name);
 
                     current.AddArgSubNode(argType.Type, next!);
@@ -183,8 +184,8 @@ namespace Webserver
 
             foreach (string element in route.Split('/'))
             {
-                if (string.IsNullOrEmpty (element)) continue;
-                
+                if (string.IsNullOrEmpty(element)) continue;
+
                 if (current.TryGetSubNode(element, out current!))
                 {
                     continue;

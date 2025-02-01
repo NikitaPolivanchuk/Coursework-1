@@ -2,11 +2,11 @@
 using DbToolkit.Filtering;
 using E_Shop.Data.Services;
 using E_Shop.Models;
-using E_Shop.Utility;
+using E_Shop.Services;
 using System.Text;
-using Webserver;
-using Webserver.Content;
-using Webserver.Utility;
+using Webserver.Controllers;
+using Webserver.Controllers.Content;
+using Webserver.Sessions;
 
 namespace E_Shop.Controllers
 {
@@ -15,13 +15,16 @@ namespace E_Shop.Controllers
         private readonly ICategoryService _categoryService;
         private readonly IProductService _productService;
         private readonly IProductCategoryService _productCategoryService;
+        private readonly LayoutBuilder _layoutBuilder;
 
         private readonly string _section;
         private readonly string _card;
 
-        public HomeController(ICategoryService categoryService,
-                              IProductService productService,
-                              IProductCategoryService productCategoryService)
+        public HomeController(
+            ICategoryService categoryService,
+            IProductService productService,
+            IProductCategoryService productCategoryService,
+            LayoutBuilder layoutBuilder)
         {
             _section = File.ReadAllText($"{AbsolutePath}Views/Home/_section.html");
             _card = File.ReadAllText($"{AbsolutePath}Views/Home/_card.html");
@@ -29,6 +32,7 @@ namespace E_Shop.Controllers
             _categoryService = categoryService;
             _productService = productService;
             _productCategoryService = productCategoryService;
+            _layoutBuilder = layoutBuilder;
         }
 
         [Endpoint("GET", "Home/Index")]
@@ -49,7 +53,7 @@ namespace E_Shop.Controllers
                 sections.AppendLine(string.Format(_section, category.Name, cards.ToString()));
             }
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Home", "Home/index.html", sections.ToString());
         }
 
@@ -73,7 +77,7 @@ namespace E_Shop.Controllers
 
             string body = string.Format(_section, "Found", result);
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Search", "Home/index.html", body);
         }
 

@@ -1,11 +1,12 @@
 ﻿using E_Shop.Data.Services;
 using E_Shop.Models;
+using E_Shop.Services;
 using E_Shop.Utility;
 using System.Net;
 using System.Text;
-using Webserver;
-using Webserver.Content;
-using Webserver.Utility;
+using Webserver.Controllers;
+using Webserver.Controllers.Content;
+using Webserver.Sessions;
 
 namespace E_Shop.Controllers
 {
@@ -14,13 +15,16 @@ namespace E_Shop.Controllers
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
         private readonly IProductCategoryService _productCategoryService;
+        private readonly LayoutBuilder _layoutBuilder;
 
         private readonly string _tableRow;
         private readonly string _soldOut;
 
-        public ProductsController(IProductService productService,
-                                  ICategoryService categoryService,
-                                  IProductCategoryService productCategoryService)
+        public ProductsController(
+            IProductService productService,
+            ICategoryService categoryService,
+            IProductCategoryService productCategoryService,
+            LayoutBuilder layoutBuilder)
         {
             _tableRow = File.ReadAllText($"{AbsolutePath}Views/Products/_row.html");
             _soldOut = File.ReadAllText($"{AbsolutePath}Views/Products/_soldOut.html");
@@ -28,6 +32,7 @@ namespace E_Shop.Controllers
             _productService = productService;
             _categoryService = categoryService;
             _productCategoryService = productCategoryService;
+            _layoutBuilder = layoutBuilder;
         }
 
         [Endpoint("GET", "Products/Index")]
@@ -56,7 +61,7 @@ namespace E_Shop.Controllers
                 sb.Append(string.Format(_tableRow, product.ImageUrl, product.Name, product.Price, product.Number,
                 string.Join(", ", categoryNames), product.Id));          
             }
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Products", "Products/index.html", sb.ToString());
         }
 
@@ -92,7 +97,7 @@ namespace E_Shop.Controllers
 
             string price = string.Format("${0:F2}", product.Price);
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View(product.Name, "Products/main.html", product.Name, product.ImageUrl, 
                 price, soldOut, disabled, product.Id, sb.ToString(), product.Description);
         }
@@ -229,7 +234,7 @@ namespace E_Shop.Controllers
                 options.AppendLine($"<option {selected} value=\"{category.Id}\">{category.Name}</option>");
             }
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Edit", "Products/edit.html", product.Name, "", product.Price, "",
                 product.ImageUrl, "", product.Description, "", options.ToString());
         }

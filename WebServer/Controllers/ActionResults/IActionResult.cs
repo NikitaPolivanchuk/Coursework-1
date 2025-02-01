@@ -1,6 +1,6 @@
 ﻿using Logging;
 
-namespace Webserver.Content
+namespace Webserver.Controllers.Content
 {
     public interface IActionResult
     {

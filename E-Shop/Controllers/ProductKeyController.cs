@@ -3,9 +3,9 @@ using E_Shop.Models;
 using E_Shop.Utility;
 using System.Net;
 using System.Text;
-using Webserver;
-using Webserver.Content;
-using Webserver.Utility;
+using Webserver.Controllers;
+using Webserver.Controllers.Content;
+using Webserver.Sessions;
 
 namespace E_Shop.Controllers
 {

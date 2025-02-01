@@ -1,7 +1,6 @@
 ﻿using System.Net;
-using Webserver.Utility;
 
-namespace Webserver
+namespace Webserver.Sessions
 {
     internal class SessionManager
     {

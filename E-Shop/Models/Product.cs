@@ -5,7 +5,7 @@ using System.Data;
 namespace E_Shop.Models
 {
     [Table("Products")]
-    internal class Product
+    public class Product
     {
         [Column("id")]
         [Key]

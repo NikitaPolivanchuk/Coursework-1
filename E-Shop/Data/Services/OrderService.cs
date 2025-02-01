@@ -3,18 +3,17 @@ using DbToolkit.Enums;
 using DbToolkit.Filtering;
 using E_Shop.Data.Enums;
 using E_Shop.Models;
-using E_Shop.Services;
 using System.Data;
 
 namespace E_Shop.Data.Services
 {
-    internal class OrderService : IOrderService
+    public class OrderService : IOrderService
     {
         private readonly IDbConnection _connection;
 
-        public OrderService()
+        public OrderService(DbConnectionProvider connectionProvider)
         {
-            _connection = DbConnectionProvider.GetInstance().Connection;
+            _connection = connectionProvider.Connection;
         }
 
         public void Add(Order order)

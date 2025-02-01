@@ -2,18 +2,17 @@
 using DbToolkit.Enums;
 using DbToolkit.Filtering;
 using E_Shop.Models;
-using E_Shop.Services;
 using System.Data;
 
 namespace E_Shop.Data.Services
 {
-    internal class UserConfirmKeyService : IUserConfirmKeyService
+    public class UserConfirmKeyService : IUserConfirmKeyService
     {
         private readonly IDbConnection _connection;
 
-        public UserConfirmKeyService()
+        public UserConfirmKeyService(DbConnectionProvider connectionProvider)
         {
-            _connection = DbConnectionProvider.GetInstance().Connection;
+            _connection = connectionProvider.Connection;
         }
 
         public void Add(UserConfirmKey confirmKey)

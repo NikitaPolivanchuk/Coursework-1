@@ -1,76 +1,38 @@
 ﻿using E_Shop.Data.Services;
 using E_Shop.Models;
-using E_Shop.Utility;
+using E_Shop.Services;
 using System.Net;
 using System.Text;
-using Webserver;
-using Webserver.Content;
-using Webserver.Utility;
+using Webserver.Controllers;
+using Webserver.Controllers.Content;
+using Webserver.Sessions;
 
 namespace E_Shop.Controllers
 {
     internal class CartController : Controller
     {
-        private static readonly string _cart =
-            File.ReadAllText($"{AbsolutePath}Views/Cart/_cart.html");
-        private static readonly string _dropdown =
-            File.ReadAllText($"{AbsolutePath}Views/Cart/_dropdown.html");
-        private static readonly string _total =
-            File.ReadAllText($"{AbsolutePath}Views/Cart/_total.html");
-
-        private static ICartService _cartServiceSt = new CartService();
-
         private readonly string _body;
         private readonly string _cartItem;
 
         private readonly IUserService _userService;
         private readonly ICartService _cartService;
         private readonly IProductService _productService;
+        private readonly LayoutBuilder _layoutBuilder;
 
-        public CartController(IUserService userService,
-                              ICartService cartService,
-                              IProductService productService)
+        public CartController(
+            IUserService userService,
+            ICartService cartService,
+            IProductService productService,
+            LayoutBuilder layoutBuilder)
         {
             _userService = userService;
             _cartService = cartService;
             _productService = productService;
+            _layoutBuilder = layoutBuilder;
 
             _body = File.ReadAllText($"{AbsolutePath}Views/Cart/_body.html");
             _cartItem = File.ReadAllText($"{AbsolutePath}Views/Cart/_cartItem.html");
         }
-
-        public static string UpdateCartNavbar(int userId)
-        {
-            int count = 0;
-            double price = 0;
-            StringBuilder dropdownItems = new StringBuilder();
-
-            Dictionary<Product, int> cartItems = _cartServiceSt.GetCartItems(userId);
-
-            foreach (var item in cartItems)
-            {
-                Product product = item.Key;
-                string body = $"{product.Name} - {item.Value}";
-
-                count++;
-                price += product.Price * item.Value;
-                dropdownItems.AppendLine(string.Format(_dropdown, product.Id, body));
-            }
-
-            if (count > 0)
-            {
-                string total = string.Format("Total: ${0:F2}", price);
-                dropdownItems.AppendLine(string.Format(_total, total));
-            }
-            else
-            {
-                string empty = File.ReadAllText($"{AbsolutePath}Views/Cart/_emptyNavbar.html");
-                dropdownItems.AppendLine(empty);
-            }
-
-            return string.Format(_cart, count, dropdownItems.ToString());
-        }
-
 
         [Endpoint("GET", "Cart/Index")]
         public IActionResult Index(Session session)
@@ -139,7 +101,7 @@ namespace E_Shop.Controllers
 
             _cartService.Add(user.Id, product.Id);
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return Redirect("../Index");
         }
 
@@ -161,7 +123,7 @@ namespace E_Shop.Controllers
 
             _cartService.Delete(user.Id, product.Id);
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return Redirect("../Index");
         }
 
@@ -182,7 +144,7 @@ namespace E_Shop.Controllers
 
             _cartService.DeleteAll(user.Id);
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return Redirect("Index");
         }
 

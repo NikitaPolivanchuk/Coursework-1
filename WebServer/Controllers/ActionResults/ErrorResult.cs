@@ -3,7 +3,7 @@ using HttpServer;
 using System.Text;
 using Logging;
 
-namespace Webserver.Content
+namespace Webserver.Controllers.Content
 {
     public class ErrorResult : IActionResult
     {
@@ -18,9 +18,9 @@ namespace Webserver.Content
             {HttpStatusCode.Forbidden, $"{PathToPages}/forbidden.html" }
         };
 
-        internal HttpStatusCode statusCode {  get; set; }
+        internal HttpStatusCode statusCode { get; set; }
 
-        internal string RefPath {  get; set; }
+        internal string RefPath { get; set; }
 
         internal ErrorResult(HttpStatusCode code)
         {

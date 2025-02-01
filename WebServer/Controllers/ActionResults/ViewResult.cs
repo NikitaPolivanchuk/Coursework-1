@@ -2,7 +2,7 @@
 using HttpServer;
 using Logging;
 
-namespace Webserver.Content
+namespace Webserver.Controllers.Content
 {
     public class ViewResult : IActionResult
     {
@@ -64,12 +64,12 @@ namespace Webserver.Content
             args.Add(content);
 
             string data = layout;
-                
+
             try
             {
                 data = string.Format(layout, args.ToArray());
             }
-            catch { }               
+            catch { }
 
             return data;
         }

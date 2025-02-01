@@ -1,9 +1,12 @@
-﻿using Logging;
-using System.Net;
+﻿using System.Net;
 using System.Net.Mime;
 using System.Reflection;
-using Webserver.Content;
+using Webserver.Controllers;
+using Webserver.Controllers.Content;
+using Webserver.DependencyInjection;
+using Webserver.Routing;
 using Webserver.Services;
+using Webserver.Sessions;
 using Webserver.Utility;
 
 namespace Webserver
@@ -12,12 +15,9 @@ namespace Webserver
     {
         private readonly Router router;
         private readonly SessionManager sessionManager;
-        private readonly IConfigProvider configProvider;
-
-        private readonly Dictionary<Type, object> services;
-
-        private readonly Queue<Type> controllersToAdd;
-        private readonly Queue<(Type, Type)> servicesToAdd;
+        private readonly WebServerOptions options;
+        private readonly IServiceCollectionProvider serviceProvider;
+        private readonly IConfigurationProvider configurationProvider;
 
         private static readonly Dictionary<string, string> RootFiles = new Dictionary<string, string>()
         {
@@ -27,102 +27,39 @@ namespace Webserver
             {".jpg", "root" }
         };
 
-        public WebServer(string hostUrl, string hostDir, string configPath, ILogger? logger = null)
-            : base(hostUrl, hostDir, logger)
+        public WebServer(WebServerOptions options)
+            : base(options.HostUrl, options.HostDir, options.Logger)
         {
             router = new Router();
             sessionManager = new SessionManager();
+            this.options = options;
 
-            services = new Dictionary<Type, object>();
+            var configurationProvider = new ConfigurationProvider(options.ConfigPath);
+            this.configurationProvider = configurationProvider;
 
-            servicesToAdd = new Queue<(Type, Type)>();
-            controllersToAdd = new Queue<Type>();
-
-            ConfigProvider.FilePath = Path.Combine(hostDir, configPath);
-            configProvider = new ConfigProvider();
-
-            AddService<IConfigProvider, ConfigProvider>();
-        }
-
-        public string? GetConfig(string key)
-        {
-            return configProvider.GetSetting(key);
-        }
-
-        public void AddService<I, S>() where S : I
-        {
-            if (!typeof(I).IsInterface)
-            {
-                throw new ArgumentException();
-            }
-            servicesToAdd.Enqueue((typeof(I), typeof(S)));
-        }
-
-        public void AddController<T>() where T : Controller
-        {
-            controllersToAdd.Enqueue(typeof(T));
-        }
-
-        private bool TryInvokeObject(Type type, out object? obj)
-        {
-            services[typeof(IHttpContextAccessor)] = new HttpContextAccessor(context);
-
-            foreach (ConstructorInfo constructor in type.GetConstructors())
-            {
-                List<object> constructorParams = new List<object>();
-
-                foreach (var parameter in constructor.GetParameters())
-                {
-                    if (!parameter.ParameterType.IsInterface)
-                    {
-                        throw new ArgumentException();
-                    }
-
-                    if (services.ContainsKey(parameter.ParameterType))
-                    {
-                        constructorParams.Add(services[parameter.ParameterType]);
-                    }
-                }
-                obj = constructor.Invoke(constructorParams.ToArray());
-                return true;
-            }
-            obj = null;
-            return false;
+            options.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>(() => new HttpContextAccessor(context));
+            options.Services.AddSingleton<IConfigurationProvider, ConfigurationProvider>(() => configurationProvider);
+            serviceProvider = options.Services.Build();
         }
 
         protected override void Start()
         {
-            while (servicesToAdd.Count > 0)
-            {
-                var v = servicesToAdd.Dequeue();
-                Type interfaceType = v.Item1;
-                Type implementationType = v.Item2;
-
-                if (TryInvokeObject(implementationType, out object? instance))
-                {
-                    services[interfaceType] = instance!;
-                }
-            }
-
             Controller.AbsolutePath = AbsolutePath("/");
 
-            while (controllersToAdd.Count > 0)
+            foreach (Type controllerType in options.Controllers)
             {
-                Type controllerType = controllersToAdd.Dequeue();
-                if (TryInvokeObject(controllerType, out object? controllerObj))
+                if (serviceProvider.GetService(controllerType) is Controller controller)
                 {
-                    Controller controller = (Controller)controllerObj!;
                     router.AddCaller(controller.GetType(), controller);
-                    
+
                     foreach (MethodInfo method in controller.GetType().GetMethods())
                     {
-                        var attributes = method.GetCustomAttributes(typeof(Endpoint), true)
-                            .Select(attr => attr as Endpoint)
-                            .FirstOrDefault();
+                        var attribute = method.GetCustomAttributes(typeof(EndpointAttribute), true)
+                            .FirstOrDefault() as EndpointAttribute;
 
-                        if (attributes != null)
+                        if (attribute != null)
                         {
-                            router.AddRoute(attributes.Method, attributes.Route, controllerType, method);
+                            router.AddRoute(attribute.Method, attribute.Route, controllerType, method);
                         }
                     }
                 }
@@ -154,7 +91,7 @@ namespace Webserver
 
         private string GetRequestUrl()
         {
-            var defaultPage = GetConfig("DefaultPage") ?? "/Home/Index";
+            var defaultPage = configurationProvider.GetSetting("DefaultPage") ?? "/Home/Index";
             var url = context.Request.RawUrl;
 
             if (string.IsNullOrEmpty(url) || url == "/")
@@ -166,7 +103,7 @@ namespace Webserver
 
         private void CheckAuthorization(Session session)
         {
-            if (!int.TryParse(GetConfig("SessionExpirationHours"), out var expirationTime))
+            if (!int.TryParse(configurationProvider.GetSetting("SessionExpirationHours"), out var expirationTime))
             {
                 expirationTime = Session.ExpirationHours;
                 logger.Send("Session expiration is missing, using default value.");
@@ -228,6 +165,5 @@ namespace Webserver
             };
             await error.ExecuteResultAsync(actionContext);
         }
-
     }
 }

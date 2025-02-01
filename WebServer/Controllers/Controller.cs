@@ -1,7 +1,7 @@
 ﻿using System.Net;
-using Webserver.Content;
+using Webserver.Controllers.Content;
 
-namespace Webserver
+namespace Webserver.Controllers
 {
     public abstract class Controller
     {

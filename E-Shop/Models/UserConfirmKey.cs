@@ -1,10 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Diagnostics.CodeAnalysis;
 
 namespace E_Shop.Models
 {
     [Table("UserConfirmKeys")]
-    internal class UserConfirmKey
+    public class UserConfirmKey
     {
         [Column("user_id")]
         public int UserId { get; set; }

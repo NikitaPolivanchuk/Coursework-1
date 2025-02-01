@@ -1,25 +1,30 @@
 ﻿using E_Shop.Data.Services;
 using E_Shop.Models;
+using E_Shop.Services;
 using E_Shop.Utility;
 using System.Net;
 using System.Text;
-using Webserver;
-using Webserver.Content;
-using Webserver.Utility;
+using Webserver.Controllers;
+using Webserver.Controllers.Content;
+using Webserver.Sessions;
 
 namespace E_Shop.Controllers
 {
     internal class CategoryController : Controller
     {
         private readonly ICategoryService _categoryService;
+        private readonly LayoutBuilder _layoutBuilder;
 
         private readonly string _tableRow;
 
-        public CategoryController(ICategoryService categoryService)
+        public CategoryController(
+            ICategoryService categoryService,
+            LayoutBuilder layoutBuilder)
         {
             _tableRow = File.ReadAllText($"{AbsolutePath}Views/Categories/_row.html");
 
             _categoryService = categoryService;
+            _layoutBuilder = layoutBuilder;
         }
 
         [Endpoint("GET", "Categories/Index")]
@@ -39,14 +44,14 @@ namespace E_Shop.Controllers
                 data.AppendLine(string.Format(_tableRow, category.Name, category.Description, category.Id));
             }
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Categories", "Categories/index.html", data.ToString());
         }
 
         [Endpoint("GET", "Categories/Create")]
         public IActionResult Create(Session session)
         {
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
 
             if (!session.IsAdmin())
             {
@@ -76,7 +81,7 @@ namespace E_Shop.Controllers
 
             if (!validator.IsValid)
             {
-                LayoutBuilder.Configure(session, AbsolutePath);
+                _layoutBuilder.Configure(session);
 
                 return View("Create error", "Categories/create.html", validator.ToValueError());
             }
@@ -102,7 +107,7 @@ namespace E_Shop.Controllers
                 return Error(HttpStatusCode.NotFound);
             }
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Edit", "Categories/edit.html", category.Name, "", category.Description, "");
         }
 
@@ -121,7 +126,7 @@ namespace E_Shop.Controllers
 
             if (!validator.IsValid)
             {
-                LayoutBuilder.Configure(session, AbsolutePath);
+                _layoutBuilder.Configure(session);
 
                 return View("Edit error", "Categories/edit.html", validator.ToValueError());
             }

@@ -1,26 +1,22 @@
-﻿using System.Data.SqlClient;
+﻿using System.Data;
+using System.Data.SqlClient;
+using Webserver.Services;
 
-namespace E_Shop.Services
+namespace E_Shop.Data;
+
+public class DbConnectionProvider
 {
-    internal class DbConnectionProvider
+    private readonly string connectionString;
+
+    public IDbConnection Connection => new SqlConnection(connectionString);
+
+    public DbConnectionProvider(IConfigurationProvider configProvider)
     {
-        private static DbConnectionProvider? _instance = null;
-        public static string? ConnectionString;
+        connectionString = configProvider.GetSetting("ConnectionString")
+            ?? throw new ArgumentException("Provide valid 'ConnectionString' configuration");
 
-        public SqlConnection Connection;
-
-        private DbConnectionProvider()
-        {
-            Connection = new SqlConnection(ConnectionString);
-        }
-
-        public static DbConnectionProvider GetInstance()
-        {
-            if (_instance == null)
-            {
-                _instance = new DbConnectionProvider();
-            }
-            return _instance;
-        }
+        using var connection = new SqlConnection(connectionString);
+        connection.Open();
+        connection.Close();
     }
 }

@@ -1,10 +1,10 @@
-﻿namespace Webserver.Utility
+﻿namespace Webserver.Sessions
 {
     public class Session
     {
         public const int ExpirationHours = 1;
 
-        public DateTime LastConnection {  get; private set; }
+        public DateTime LastConnection { get; private set; }
         public bool Authorized { get; set; }
         public Dictionary<string, string> Properties { get; set; }
 

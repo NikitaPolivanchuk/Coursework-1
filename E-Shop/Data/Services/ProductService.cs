@@ -2,18 +2,17 @@
 using DbToolkit.Enums;
 using DbToolkit.Filtering;
 using E_Shop.Models;
-using E_Shop.Services;
 using System.Data;
 
 namespace E_Shop.Data.Services
 {
-    internal class ProductService : IProductService
+    public class ProductService : IProductService
     {
         private readonly IDbConnection _connection;
 
-        public ProductService()
+        public ProductService(DbConnectionProvider connectionProvider)
         {
-            _connection = DbConnectionProvider.GetInstance().Connection;
+            _connection = connectionProvider.Connection;
         }
 
         public void Add(Product product)

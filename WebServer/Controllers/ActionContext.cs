@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Webserver.Content
+namespace Webserver.Controllers
 {
     public class ActionContext
     {

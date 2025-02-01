@@ -2,18 +2,17 @@
 using DbToolkit.Enums;
 using DbToolkit.Filtering;
 using E_Shop.Models;
-using E_Shop.Services;
 using System.Data;
 
 namespace E_Shop.Data.Services
 {
-    internal class CartService : ICartService
+    public class CartService : ICartService
     {
         private readonly IDbConnection _connection;
 
-        public CartService()
+        public CartService(DbConnectionProvider connectionProvider)
         {
-            _connection = DbConnectionProvider.GetInstance().Connection;
+            _connection = connectionProvider.Connection;
         }
 
         public void Add(int userId, int productId)

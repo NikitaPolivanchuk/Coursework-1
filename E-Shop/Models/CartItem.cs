@@ -3,7 +3,7 @@
 namespace E_Shop.Models
 {
     [Table("CartItems")]
-    internal class CartItem
+    public class CartItem
     {
         [Column("user_id")]
         public int UserId { get; set; }

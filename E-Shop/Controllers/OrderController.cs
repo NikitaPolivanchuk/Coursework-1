@@ -1,14 +1,14 @@
-﻿using E_Shop.Data;
-using E_Shop.Data.Enums;
+﻿using E_Shop.Data.Enums;
 using E_Shop.Data.Services;
 using E_Shop.Models;
+using E_Shop.Services;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-using Webserver;
-using Webserver.Content;
+using Webserver.Controllers;
+using Webserver.Controllers.Content;
 using Webserver.Services;
-using Webserver.Utility;
+using Webserver.Sessions;
 
 namespace E_Shop.Controllers
 {
@@ -20,7 +20,8 @@ namespace E_Shop.Controllers
         private readonly IProductService _productService;
         private readonly IUserService _userService;
         private readonly IProductKeyService _productKeyService;
-        private readonly IConfigProvider _configProvider;
+        private readonly IConfigurationProvider _configProvider;
+        private readonly EmailService _emailService;
 
         private readonly string _email_p1;
         private readonly string _email_p2;
@@ -28,13 +29,15 @@ namespace E_Shop.Controllers
 
         private bool _clearCart;
 
-        public OrderController(ICartService cartService,
-                               IOrderItemsService orderItemsService,
-                               IOrderService orderService,
-                               IProductService productService,
-                               IUserService userService,
-                               IProductKeyService productKeyService,
-                               IConfigProvider configProvider)
+        public OrderController(
+            ICartService cartService,
+            IOrderItemsService orderItemsService,
+            IOrderService orderService,
+            IProductService productService,
+            IUserService userService,
+            IProductKeyService productKeyService,
+            IConfigurationProvider configProvider,
+            EmailService emailService)
         {
             _cartService = cartService;
             _orderItemsService = orderItemsService;
@@ -42,6 +45,8 @@ namespace E_Shop.Controllers
             _productService = productService;
             _userService = userService;
             _productKeyService = productKeyService;
+            _configProvider = configProvider;
+            _emailService = emailService;
 
             _email_p1 = File.ReadAllText($"{AbsolutePath}Views/Order/email_p1.html");
             _email_p2 = File.ReadAllText($"{AbsolutePath}Views/Order/email_p2.html");
@@ -225,8 +230,7 @@ namespace E_Shop.Controllers
             mail.Body = email.ToString();
             mail.IsBodyHtml = true;
 
-            EmailSender emailSender = new EmailSender();
-            emailSender.Send(mail);
+            _emailService.Send(mail);
 
             mail.Attachments.ToList().ForEach(x => x.ContentStream.Dispose());
 

@@ -1,4 +1,4 @@
-﻿namespace Webserver.Utility
+﻿namespace Webserver.Routing
 {
     internal class ArgType
     {
@@ -46,7 +46,7 @@
 
 
         public static ArgType GetArgType(string stringType)
-        {            
+        {
             return types.
                 Where(type => type.AltNames.Contains(stringType.ToLower()))
                 .FirstOrDefault()!;

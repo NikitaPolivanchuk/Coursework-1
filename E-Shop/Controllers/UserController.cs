@@ -1,15 +1,15 @@
 ﻿using E_Shop.Data.Services;
 using E_Shop.Utility;
 using E_Shop.Models;
-using Webserver;
-using Webserver.Utility;
 using System.Text;
 using System.Net.Mail;
 using System.Security.Cryptography;
-using E_Shop.Data;
-using Webserver.Content;
 using System.Net;
 using Webserver.Services;
+using Webserver.Controllers;
+using Webserver.Controllers.Content;
+using Webserver.Sessions;
+using E_Shop.Services;
 
 namespace E_Shop.Controllers
 {
@@ -28,15 +28,20 @@ namespace E_Shop.Controllers
         private readonly IProductService _productService;
         private readonly IUserConfirmKeyService _userConfirmKeyService;
         private readonly IHttpContextAccessor _HttpContextAccessor;
-        private readonly IConfigProvider _configProvider;
+        private readonly IConfigurationProvider _configProvider;
+        private readonly EmailService _emailService;
+        private readonly LayoutBuilder _layoutBuilder;
 
-        public UserController(IUserService userService,
-                              IOrderItemsService orderItemsService,
-                              IOrderService orderService,
-                              IProductService productService,
-                              IUserConfirmKeyService userConfirmKeyService,
-                              IHttpContextAccessor httpContextAccessor,
-                              IConfigProvider configProvider)
+        public UserController(
+            IUserService userService,
+            IOrderItemsService orderItemsService,
+            IOrderService orderService,
+            IProductService productService,
+            IUserConfirmKeyService userConfirmKeyService,
+            IHttpContextAccessor httpContextAccessor,
+            IConfigurationProvider configProvider,
+            EmailService emailService,
+            LayoutBuilder layoutBuilder)
         {
             _userService = userService;
             _orderItemsService = orderItemsService;
@@ -45,12 +50,14 @@ namespace E_Shop.Controllers
             _userConfirmKeyService = userConfirmKeyService;
             _HttpContextAccessor = httpContextAccessor;
             _configProvider = configProvider;
+            _emailService = emailService;
+            _layoutBuilder = layoutBuilder;
         }
 
         [Endpoint("GET", "User/Register")]
         public IActionResult Register(Session session)
         {
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Register", "User/register.html", Validator.Fill(10));
         }
 
@@ -76,7 +83,7 @@ namespace E_Shop.Controllers
 
             if (!validator.IsValid)
             {
-                LayoutBuilder.Configure(session, AbsolutePath);
+                _layoutBuilder.Configure(session);
                 return View("Register error", "User/register.html", validator.ToValueError());
             }
 
@@ -130,8 +137,7 @@ namespace E_Shop.Controllers
             mail.Body = body.ToString();
             mail.IsBodyHtml = true;
 
-            EmailSender emailSender = new EmailSender();
-            emailSender.Send(mail);
+            _emailService.Send(mail);
         }
 
         [Endpoint("GET", "User/RegisterSuccess")]
@@ -167,7 +173,7 @@ namespace E_Shop.Controllers
         [Endpoint("GET", "User/Login")]
         public IActionResult Login(Session session)
         {
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Login", "User/login.html", Validator.Fill(6));
         }
 
@@ -193,7 +199,7 @@ namespace E_Shop.Controllers
 
             if (!validator.IsValid)
             {
-                LayoutBuilder.Configure(session, AbsolutePath);
+                _layoutBuilder.Configure(session);
                 return View("Login", "User/login.html", validator.ToValueError());
             }
 
@@ -212,7 +218,7 @@ namespace E_Shop.Controllers
 
             validator.SetCustomError("status", "Incorrect email or password<br><br>");
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Login", "User/login.html", validator.ToValueError());
         }
 
@@ -272,8 +278,7 @@ namespace E_Shop.Controllers
             mail.Body = body.ToString();
             mail.IsBodyHtml = true;
 
-            EmailSender emailSender = new EmailSender();
-            emailSender.Send(mail);
+            _emailService.Send(mail);
         }
 
         [Endpoint("POST", "User/ResetPassword")]
@@ -384,7 +389,7 @@ namespace E_Shop.Controllers
                 data = string.Format(data, rows.ToString());
             }          
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return View("Order history", "User/index.html", "Order history", data);
         }
 
@@ -506,7 +511,7 @@ namespace E_Shop.Controllers
             session.Authorized = false;
             session.Properties = new Dictionary<string, string>();
 
-            LayoutBuilder.Configure(session, AbsolutePath);
+            _layoutBuilder.Configure(session);
             return Redirect("../../Home/Index");
         }
     }

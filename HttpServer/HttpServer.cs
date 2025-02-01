@@ -58,7 +58,7 @@ namespace HttpServer
             return path.Replace('/', Path.DirectorySeparatorChar);
         }
 
-        public HttpServer(string hostUrl, string hostDir, ILogger? logger = null)
+        public HttpServer(string? hostUrl, string? hostDir, ILogger? logger = null)
         {
             this.hostUrl = string.IsNullOrEmpty(hostUrl)
                 ? "http://localhost:80/"

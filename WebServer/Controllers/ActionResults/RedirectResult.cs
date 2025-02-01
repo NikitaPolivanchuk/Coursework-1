@@ -1,7 +1,7 @@
 ﻿
 using Logging;
 
-namespace Webserver.Content
+namespace Webserver.Controllers.Content
 {
     public class RedirectResult : IActionResult
     {

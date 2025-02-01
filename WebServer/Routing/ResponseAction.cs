@@ -1,4 +1,4 @@
-﻿namespace Webserver.Utility
+﻿namespace Webserver.Routing
 {
     internal class ResponseAction
     {
