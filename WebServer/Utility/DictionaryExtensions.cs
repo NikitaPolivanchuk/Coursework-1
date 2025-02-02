@@ -5,27 +5,26 @@ namespace Webserver.Utility
 {
     public static class DictionaryExtensions
     {
-        public static Dictionary<string, string> asQuery(this string str)
+        public static Dictionary<string, string> ToDictionary(this string queryString)
         {
-            Dictionary<string, string> dict = new Dictionary<string, string>();
+            Dictionary<string, string> parameters = [];
 
-            foreach (string nameValue in str.Split('&'))
+            foreach (string parameter in queryString.Split('&'))
             {
-                string[] nameVal = nameValue.Split('=');
+                string[] pair = parameter.Split('=');
 
-                string key = HttpUtility.UrlDecode(nameVal[0]);
-                string value = HttpUtility.UrlDecode(nameVal[1]);
+                if (pair.Length != 2)
+                {
+                    continue;
+                }
 
-                if (dict.ContainsKey(key))
-                {
-                    dict[key] += $"&{value}";
-                }
-                else
-                {
-                    dict[key] = value;
-                }
+                string key = HttpUtility.UrlDecode(pair[0]);
+                string value = HttpUtility.UrlDecode(pair[1]);
+
+                parameters[key] = parameters.ContainsKey(key) ? $"&{value}" : value;
             }
-            return dict;
+
+            return parameters;
         }
 
         public static string ToUrlEncodedString (this Dictionary<string, string> dict)
