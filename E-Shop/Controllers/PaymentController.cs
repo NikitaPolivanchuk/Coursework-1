@@ -3,6 +3,7 @@ using E_Shop.Data.Services;
 using E_Shop.Models;
 using System.Net;
 using Webserver.Controllers;
+using Webserver.Controllers.Attributes;
 using Webserver.Controllers.Content;
 using Webserver.Sessions;
 
@@ -21,7 +22,7 @@ namespace E_Shop.Controllers
             _orderService = orderService;
         }
 
-        [Endpoint("GET", "Payment/Proceed")]
+        [HttpGet]
         public string? Proceed(Session session)
         {
             if (!session.Authorized)
@@ -43,7 +44,7 @@ namespace E_Shop.Controllers
             return string.Format(_proceedPage, price);
         }
 
-        [Endpoint("POST", "Payment/Confirmed")]
+        [HttpPost]
         public IActionResult Confirmed(Session session)
         {
             if (!session.Authorized)
@@ -53,7 +54,7 @@ namespace E_Shop.Controllers
             return Redirect($"../Order/Proceed/{(int)OrderStatus.Completed}");
         }
 
-        [Endpoint("GET", "Payment/Canceled")]
+        [HttpGet]
         public IActionResult Canceled(Session session)
         {
             if (!session.Authorized)

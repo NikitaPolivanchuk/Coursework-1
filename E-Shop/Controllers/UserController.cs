@@ -10,6 +10,7 @@ using Webserver.Controllers;
 using Webserver.Controllers.Content;
 using Webserver.Sessions;
 using E_Shop.Services;
+using Webserver.Controllers.Attributes;
 
 namespace E_Shop.Controllers
 {
@@ -54,14 +55,14 @@ namespace E_Shop.Controllers
             _layoutBuilder = layoutBuilder;
         }
 
-        [Endpoint("GET", "User/Register")]
+        [HttpGet]
         public IActionResult Register(Session session)
         {
             _layoutBuilder.Configure(session);
             return View("Register", "User/register.html", Validator.Fill(10));
         }
 
-        [Endpoint("POST", "User/Register")]
+        [HttpPost]
         public IActionResult Register(Session session, Dictionary<string, string> data)
         {
             Validator validator = new Validator(data);
@@ -140,13 +141,13 @@ namespace E_Shop.Controllers
             _emailService.Send(mail);
         }
 
-        [Endpoint("GET", "User/RegisterSuccess")]
+        [HttpGet]
         public IActionResult RegisterSuccess()
         {
             return View("Registration success", "User/register-success.html");
         }
 
-        [Endpoint("POST", "User/ConfirmEmail")]
+        [HttpPost]
         public IActionResult ConfirmEmail(Dictionary<string, string> data)
         {
             Validator validator = new Validator(data);
@@ -170,14 +171,14 @@ namespace E_Shop.Controllers
             return Redirect("Login");
         }
 
-        [Endpoint("GET", "User/Login")]
+        [HttpGet]
         public IActionResult Login(Session session)
         {
             _layoutBuilder.Configure(session);
             return View("Login", "User/login.html", Validator.Fill(6));
         }
 
-        [Endpoint("POST", "User/Login")]
+        [HttpPost]
         public IActionResult Login(Session session, Dictionary<string, string> data)
         {
             User[] admins = _userService.GetAll("admin");
@@ -222,13 +223,13 @@ namespace E_Shop.Controllers
             return View("Login", "User/login.html", validator.ToValueError());
         }
 
-        [Endpoint("GET", "User/RequestResetPassword")]
+        [HttpGet]
         public IActionResult RequestResetPassword()
         {
             return View("Reset password", "User/request-reset-psw.html", Validator.Fill(2));
         }
 
-        [Endpoint("POST", "User/RequestResetPassword")] 
+        [HttpPost] 
         public IActionResult RequestResetPassword(Dictionary<string, string> data)
         {
             Validator validator = new Validator(data);
@@ -281,7 +282,7 @@ namespace E_Shop.Controllers
             _emailService.Send(mail);
         }
 
-        [Endpoint("POST", "User/ResetPassword")]
+        [HttpPost]
         public IActionResult ResetPassword(Dictionary<string, string> data)
         {
             Validator validator = new Validator(data);
@@ -301,7 +302,7 @@ namespace E_Shop.Controllers
             return View("Reset password", "User/reset-psw.html", args.ToArray());
         }
 
-        [Endpoint("POST", "User/ProceedResetPassword")]
+        [HttpPost]
         public IActionResult ProceedResetPassword(Dictionary<string, string> data)
         {
             Validator validator = new Validator(data);
@@ -343,7 +344,7 @@ namespace E_Shop.Controllers
             return Redirect("Login");
         }
 
-        [Endpoint("GET", "User/OrderHistory")]
+        [HttpGet]
         public IActionResult OrderHistory(Session session)
         {
             if (!session.Authorized)
@@ -393,7 +394,7 @@ namespace E_Shop.Controllers
             return View("Order history", "User/index.html", "Order history", data);
         }
 
-        [Endpoint("GET", "User/Edit")]
+        [HttpGet]
         public IActionResult Edit(Session session)
         {
             if (!session.Authorized)
@@ -413,7 +414,7 @@ namespace E_Shop.Controllers
             return View($"Edit - {username}", "User/edit.html", parameters.ToArray());
         }
 
-        [Endpoint("POST", "User/UpdateUsername")]
+        [HttpPost]
         public IActionResult UpdateUsername(Session session, Dictionary<string, string> data)
         {
             if (!session.Authorized)
@@ -454,7 +455,7 @@ namespace E_Shop.Controllers
             return Redirect("../Home/Index");
         }
 
-        [Endpoint("POST", "User/UpdatePassword")]
+        [HttpPost]
         public IActionResult UpdatePassword(Session session, Dictionary<string, string> data)
         {
             if (!session.Authorized)
@@ -505,7 +506,7 @@ namespace E_Shop.Controllers
             return Redirect("Logout");
         }
 
-        [Endpoint("GET", "User/Logout")]
+        [HttpGet]
         public IActionResult Logout(Session session)
         {
             session.Authorized = false;

@@ -5,6 +5,7 @@ using E_Shop.Models;
 using E_Shop.Services;
 using System.Text;
 using Webserver.Controllers;
+using Webserver.Controllers.Attributes;
 using Webserver.Controllers.Content;
 using Webserver.Sessions;
 
@@ -35,7 +36,7 @@ namespace E_Shop.Controllers
             _layoutBuilder = layoutBuilder;
         }
 
-        [Endpoint("GET", "Home/Index")]
+        [HttpGet]
         public IActionResult Index(Session session)
         {
             Category[] categories = _categoryService.GetAll();
@@ -57,7 +58,7 @@ namespace E_Shop.Controllers
             return View("Home", "Home/index.html", sections.ToString());
         }
 
-        [Endpoint("GET", "Home/Search")]
+        [HttpGet]
         public IActionResult Search(Session session, string name)
         {
             var filters = new Filters();
@@ -81,7 +82,7 @@ namespace E_Shop.Controllers
             return View("Search", "Home/index.html", body);
         }
 
-        [Endpoint("GET", "Home/GetHints")]
+        [HttpGet]
         public string GetHints()
         {
             StringBuilder names = new StringBuilder();

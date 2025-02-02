@@ -1,7 +1,9 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Net.Mime;
 using System.Reflection;
 using Webserver.Controllers;
+using Webserver.Controllers.Attributes;
 using Webserver.Controllers.Content;
 using Webserver.DependencyInjection;
 using Webserver.Routing;
@@ -48,22 +50,56 @@ namespace Webserver
 
             foreach (Type controllerType in options.Controllers)
             {
-                if (serviceProvider.GetService(controllerType) is Controller controller)
+                if (!TryGetController(controllerType, out var controller))
                 {
-                    router.AddCaller(controller.GetType(), controller);
+                    continue;
+                }
 
-                    foreach (MethodInfo method in controller.GetType().GetMethods())
-                    {
-                        var attribute = method.GetCustomAttributes(typeof(EndpointAttribute), true)
-                            .FirstOrDefault() as EndpointAttribute;
+                router.AddCaller(controller!.GetType(), controller);
 
-                        if (attribute != null)
-                        {
-                            router.AddRoute(attribute.Method.Method, attribute.Route, controllerType, method);
-                        }
-                    }
+                string routeBase = GetRouteBase(controllerType);
+                foreach (MethodInfo method in controller.GetType().GetMethods())
+                {
+                    ProcessMethod(controllerType, method, routeBase);
                 }
             }
+        }
+
+        private bool TryGetController(Type controllerType, out Controller? controller)
+        {
+            controller = serviceProvider.GetService(controllerType) as Controller;
+            return controller != null;
+        }
+
+        private string GetRouteBase(Type controllerType)
+        {
+            var routeBase = controllerType.Name.Replace("Controller", string.Empty);
+            var routeAttribute = controllerType.GetCustomAttribute<RouteAttribute>();
+            return routeAttribute?.Name ?? routeBase;
+        }
+
+        private void ProcessMethod(Type controllerType, MethodInfo method, string routeBase)
+        {
+            var methodAttribute = method.GetCustomAttribute<HttpMethodAttribute>(true);
+            if (methodAttribute == null)
+            {
+                return;
+            }
+
+            var route = $"{routeBase}/{methodAttribute.Template ?? method.Name}";
+            router.AddRoute(methodAttribute.Method.Method, route, controllerType, method);
+        }
+
+        private void ProcessMethod(Type controllerType, MethodInfo method, string routeBase)
+        {
+            var methodAttribute = method.GetCustomAttribute<HttpMethodAttribute>(true);
+            if (methodAttribute == null)
+            {
+                return;
+            }
+
+            var route = $"{routeBase}/{methodAttribute.Template ?? method.Name}";
+            router.AddRoute(methodAttribute.Method, route, controllerType, method);
         }
 
         public override async Task ProcessRequest()

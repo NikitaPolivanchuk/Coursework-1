@@ -4,24 +4,25 @@ using E_Shop.Utility;
 using System.Net;
 using System.Text;
 using Webserver.Controllers;
+using Webserver.Controllers.Attributes;
 using Webserver.Controllers.Content;
 using Webserver.Sessions;
 
 namespace E_Shop.Controllers
 {
-    internal class ProductKeyController : Controller
+    internal class ProductKeysController : Controller
     {
         private readonly IProductService _productService;
         private readonly IProductKeyService _productKeyService;
 
-        public ProductKeyController(IProductService productService,
+        public ProductKeysController(IProductService productService,
                                     IProductKeyService productKeyService)
         {
             _productService = productService;
             _productKeyService = productKeyService;
         }
 
-        [Endpoint("GET", "ProductKeys/{id:int}/Index")]
+        [HttpGet("{id:int}/Index")]
         public IActionResult Index(Session session, int id)
         {
             if (!session.IsAdmin())
@@ -48,7 +49,7 @@ namespace E_Shop.Controllers
             return View($"{product.Name} keys", "ProductKey/index.html", product.Name, product.Number, rows);
         }
 
-        [Endpoint("POST", "ProductKeys/{id:int}/Add")]
+        [HttpPost("{id:int}/Add")]
         public IActionResult Create(Session session, int id, string key)
         {
             if (!session.IsAdmin())
@@ -76,7 +77,7 @@ namespace E_Shop.Controllers
             return Redirect("Index");
         }
 
-        [Endpoint("GET", "ProductKeys/Delete/{id:int}")]
+        [HttpGet("Delete/{id:int}")]
         public IActionResult Delete(Session session, int id)
         {
             if (!session.IsAdmin())

@@ -32,12 +32,12 @@ internal class Program
 
         builder.AddController<HomeController>();
         builder.AddController<UserController>();
-        builder.AddController<CategoryController>();
+        builder.AddController<CategoriesController>();
         builder.AddController<ProductsController>();
         builder.AddController<CartController>();
         builder.AddController<OrderController>();
         builder.AddController<PaymentController>();
-        builder.AddController<ProductKeyController>();
+        builder.AddController<ProductKeysController>();
 
         var server = builder.Build();
 
