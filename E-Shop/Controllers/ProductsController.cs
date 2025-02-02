@@ -5,6 +5,7 @@ using E_Shop.Utility;
 using System.Net;
 using System.Text;
 using Webserver.Controllers;
+using Webserver.Controllers.Attributes;
 using Webserver.Controllers.Content;
 using Webserver.Sessions;
 
@@ -35,7 +36,7 @@ namespace E_Shop.Controllers
             _layoutBuilder = layoutBuilder;
         }
 
-        [Endpoint("GET", "Products/Index")]
+        [HttpGet]
         public IActionResult Index(Session session)
         {
             if (!session.IsAdmin())
@@ -65,7 +66,7 @@ namespace E_Shop.Controllers
             return View("Products", "Products/index.html", sb.ToString());
         }
 
-        [Endpoint("GET", "Products/{id:int}")]
+        [HttpGet("{id:int}")]
         public IActionResult Main(Session session, int id)
         {
             Product? product = _productService.Get(id);
@@ -102,7 +103,7 @@ namespace E_Shop.Controllers
                 price, soldOut, disabled, product.Id, sb.ToString(), product.Description);
         }
 
-        [Endpoint("GET", "Products/Create")]
+        [HttpGet]
         public IActionResult Create(Session session)
         {
             if (!session.IsAdmin())
@@ -124,7 +125,7 @@ namespace E_Shop.Controllers
             return View("Create product", "Products/create.html", args.ToArray());
         }
 
-        [Endpoint("POST", "Products/Create")]
+        [HttpPost]
         public IActionResult Create(Session session, Dictionary<string, string> data)
         {
             if (!session.IsAdmin())
@@ -199,7 +200,7 @@ namespace E_Shop.Controllers
             return Redirect("Index");
         }
 
-        [Endpoint("GET", "Products/Edit/{id:int}")]
+        [HttpGet("Edit/{id:int}")]
         public IActionResult Edit(Session session, int id)
         {
             if (!session.IsAdmin())
@@ -239,7 +240,7 @@ namespace E_Shop.Controllers
                 product.ImageUrl, "", product.Description, "", options.ToString());
         }
 
-        [Endpoint("POST", "Products/Edit/{id:int}")]
+        [HttpPost("Edit/{id:int}")]
         public IActionResult Edit(Session session, int id, Dictionary<string, string> data)
         {
             if (!session.IsAdmin())
@@ -311,7 +312,7 @@ namespace E_Shop.Controllers
             return Redirect("../Index");
         }
 
-        [Endpoint("GET", "Products/Delete/{id:int}")]
+        [HttpGet("/Delete/{id:int}")]
         public  IActionResult Delete(Session session, int id)
         {
             if (!session.IsAdmin())

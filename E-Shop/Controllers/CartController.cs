@@ -4,6 +4,7 @@ using E_Shop.Services;
 using System.Net;
 using System.Text;
 using Webserver.Controllers;
+using Webserver.Controllers.Attributes;
 using Webserver.Controllers.Content;
 using Webserver.Sessions;
 
@@ -34,7 +35,7 @@ namespace E_Shop.Controllers
             _cartItem = File.ReadAllText($"{AbsolutePath}Views/Cart/_cartItem.html");
         }
 
-        [Endpoint("GET", "Cart/Index")]
+        [HttpGet]
         public IActionResult Index(Session session)
         {
             if (!session.Authorized)
@@ -83,7 +84,7 @@ namespace E_Shop.Controllers
             return View("Cart", "Cart/index.html", user.Username, body);
         }
 
-        [Endpoint("GET", "Cart/Add/{productId:int}")]
+        [HttpGet("Add/{productId:int}")]
         public IActionResult Add(Session session, int productId)
         {
             if (!session.Authorized)
@@ -105,7 +106,7 @@ namespace E_Shop.Controllers
             return Redirect("../Index");
         }
 
-        [Endpoint("GET", "Cart/Remove/{productId:int}")]
+        [HttpGet("Remove/{productId:int}")]
         public IActionResult Remove(Session session, int productId)
         {
             if (!session.Authorized)
@@ -127,7 +128,7 @@ namespace E_Shop.Controllers
             return Redirect("../Index");
         }
 
-        [Endpoint("GET", "Cart/RemoveAll")]
+        [HttpGet]
         public IActionResult RemoveAll(Session session)
         {
             if (!session.Authorized)
@@ -148,7 +149,7 @@ namespace E_Shop.Controllers
             return Redirect("Index");
         }
 
-        [Endpoint("GET", "Cart/Continue")]
+        [HttpGet]
         public IActionResult Continue(Session session)
         {
             if (!session.Authorized)

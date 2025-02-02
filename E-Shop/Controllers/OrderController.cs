@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Text;
 using Webserver.Controllers;
+using Webserver.Controllers.Attributes;
 using Webserver.Controllers.Content;
 using Webserver.Services;
 using Webserver.Sessions;
@@ -53,7 +54,7 @@ namespace E_Shop.Controllers
             _tableRow = File.ReadAllText($"{AbsolutePath}Views/Order/_row.html");
         }
 
-        [Endpoint("GET", "Order/Cart")]
+        [HttpGet]
         public IActionResult Cart(Session session)
         {
             if (!session.Authorized)
@@ -73,7 +74,7 @@ namespace E_Shop.Controllers
             return _InitOrder(user, items);
         }
 
-        [Endpoint("GET", "Order/Direct/{id:int}")]
+        [HttpGet("Direct/{id:int}")]
         public IActionResult Direct(Session session, int id)
         {
             if (!session.Authorized)
@@ -128,7 +129,7 @@ namespace E_Shop.Controllers
         }
 
 
-        [Endpoint("GET", "Order/Proceed/{code:int}")]
+        [HttpGet("Proceed/{code:int}")]
         public IActionResult Completed(Session session, int code)
         {
             if (!session.Authorized)
