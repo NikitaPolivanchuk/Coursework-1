@@ -31,6 +31,6 @@ internal class FormDataParser
             body.Append(request.ContentEncoding.GetString(buffer, 0, bytesRead));
         }
 
-        return body.ToString().asQuery();
+        return body.ToString().ToDictionary();
     }
 }

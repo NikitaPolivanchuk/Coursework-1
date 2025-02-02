@@ -1,272 +1,143 @@
 ﻿using System.Reflection;
 using Webserver.Sessions;
-using Webserver.Utility;
 
-namespace Webserver.Routing
+namespace Webserver.Routing;
+
+internal class Router
 {
-    internal class Router
+    private readonly RouteNode root = new("/");
+    private readonly Dictionary<Type, object> callers = [];
+
+    public void AddCaller(Type callerType, object caller) => callers[callerType] = caller;
+
+    public void AddRoute(
+        string httpMethod,
+        string route,
+        Type caller,
+        MethodInfo methodInfo)
     {
-        private class Method
+        var current = root;
+        var routeSegments = RouteParser.Parse(httpMethod, route);
+
+        foreach (var segment in routeSegments)
         {
-            public Type CallerType { get; }
-            public MethodInfo Function { get; }
-
-            public Method(Type caller, MethodInfo function)
+            if (segment.IsParameter)
             {
-                CallerType = caller;
-                Function = function;
-            }
-        }
-        private class Node
-        {
-            public string Name { get; }
-            public Method? Method { get; set; }
-            private Dictionary<string, Node>? SubNodes { get; set; }
-            private Dictionary<Type, Node>? ArgSubNodes { get; set; }
-
-            public Node(string name)
-            {
-                Name = name;
-            }
-
-            public void AddSubNode(string name, Node node)
-            {
-                if (SubNodes == null)
+                if (!current.TryGetArgSubNode(segment.ParameterType, out var next))
                 {
-                    SubNodes = new Dictionary<string, Node>();
+                    next = new RouteNode(segment.Name);
+                    current.AddArgSubNode(segment.ParameterType, next);
                 }
-                SubNodes[name] = node;
-            }
-
-            public void AddArgSubNode(Type type, Node node)
-            {
-                if (ArgSubNodes == null)
-                {
-                    ArgSubNodes = new Dictionary<Type, Node>();
-                }
-                ArgSubNodes[type] = node;
-            }
-
-            public bool TryGetSubNode(string name, out Node? node)
-            {
-                if (SubNodes != null && SubNodes.TryGetValue(name, out node))
-                {
-                    return true;
-                }
-                node = this;
-                return false;
-            }
-
-            public bool TryGetArgSubNode(Type type, out Node? node)
-            {
-                if (ArgSubNodes != null && ArgSubNodes.TryGetValue(type, out node))
-                {
-                    return true;
-                }
-                node = this;
-                return false;
-            }
-        }
-
-
-        private Node? root;
-
-        private Dictionary<Type, object>? callers;
-
-
-        public void AddCaller(Type callerType, object caller)
-        {
-            if (callers == null)
-            {
-                callers = new Dictionary<Type, object>();
-            }
-            callers[callerType] = caller;
-        }
-
-
-        public void AddRoute(HttpMethod httpMethod, string route, Type caller, MethodInfo function)
-        {
-            if (root == null)
-            {
-                root = new Node("/");
-            }
-
-            Node current = root;
-
-            route = httpMethod + "/" + route;
-
-            foreach (string element in route.Split('/'))
-            {
-                if (string.IsNullOrEmpty(element)) continue;
-
-                Node? next = null;
-
-                if (element.StartsWith('{') && element.EndsWith('}'))
-                {
-                    string param = element.Substring(1, element.Length - 2);
-                    int index = param.IndexOf(':');
-
-                    string name = string.Empty;
-                    string typeStr;
-
-                    if (index != -1)
-                    {
-                        name = param.Substring(0, index);
-                        typeStr = param.Substring(index + 1);
-                    }
-                    else
-                    {
-                        name = param;
-                        typeStr = "string";
-                    }
-
-                    ArgType argType = ArgType.GetArgType(typeStr);
-
-                    next = current.TryGetArgSubNode(argType.Type, out Node? argNode)
-                        ? argNode
-                        : new Node(name);
-
-                    current.AddArgSubNode(argType.Type, next!);
-                }
-                else
-                {
-                    next = current!.TryGetSubNode(element, out Node? node)
-                    ? node
-                    : new Node(element);
-
-                    current.AddSubNode(element, next!);
-                }
-
                 current = next!;
             }
-            current.Method = new Method(caller, function);
+            else
+            {
+                if (!current.TryGetSubNode(segment.Name, out var next))
+                {
+                    next = new RouteNode(segment.Name);
+                    current.AddSubNode(segment.Name, next);
+                }
+                current = next!;
+            }
         }
 
-        public async Task<ResponseAction> TryRoute(Session session, HttpMethod httpMethod, string? route, Dictionary<string, string>? inputParams)
+        current.Method = new RouteMethod(caller, methodInfo);
+    }
+
+    public async Task<RoutingResult> TryRoute(
+        Session session,
+        string httpMethod,
+        string path,
+        Dictionary<string, string> inputParams)
+    {
+        var current = root;
+        var routeSegments = RouteParser.Parse(httpMethod, path);
+        var routeArgs = new Dictionary<string, object>();
+
+        foreach (var segment in routeSegments)
         {
-            if (root == null)
+            if (current.TryGetSubNode(segment.Name, out current!))
             {
-                return await Task.FromResult(new ResponseAction(false, null, null));
+                continue;
             }
-
-            route = httpMethod + route;
-
-            Dictionary<string, string> queryParams = null;
-            int paramIdx = route.IndexOf('?');
-            if (paramIdx != -1)
+            if (segment.IsParameter && current.TryGetArgSubNode(segment.ParameterType, out current!))
             {
-                queryParams = route.Substring(paramIdx + 1).asQuery();
-                route = route.Substring(0, paramIdx);
+                routeArgs[current.Name] = segment.ParameterValue!;
+                continue;
             }
-
-            if (inputParams != null)
-            {
-                if (queryParams == null)
-                {
-                    queryParams = inputParams;
-                }
-                else
-                {
-                    foreach (var pair in inputParams)
-                    {
-                        queryParams[pair.Key] = pair.Value;
-                    }
-                }
-            }
-
-            if (queryParams == null)
-            {
-                queryParams = new Dictionary<string, string>();
-            }
-
-            Node current = root;
-            Dictionary<string, object> routeArgs = new Dictionary<string, object>();
-
-            foreach (string element in route.Split('/'))
-            {
-                if (string.IsNullOrEmpty(element)) continue;
-
-                if (current.TryGetSubNode(element, out current!))
-                {
-                    continue;
-                }
-                if (ArgType.TryParse(element, out object? value, out Type? type)
-                    && current.TryGetArgSubNode(type!, out current!))
-                {
-                    routeArgs[current.Name] = value!;
-                }
-                else
-                {
-                    return await Task.FromResult(new ResponseAction(false, null, null));
-                }
-            }
-
-
-            if (current.Method != null)
-            {
-                if (!callers!.TryGetValue(current.Method.CallerType, out object? caller))
-                {
-                    return await Task.FromResult(new ResponseAction(false, null, null));
-                }
-
-                List<object> methodParams = new List<object>();
-
-                if (current.Method.Function.GetParameters().Length > 0)
-                {
-                    foreach (ParameterInfo param in current.Method.Function.GetParameters())
-                    {
-                        if (param.ParameterType == typeof(Session))
-                        {
-                            methodParams.Add(session);
-                            continue;
-                        }
-                        if (param.ParameterType == typeof(Dictionary<string, string>))
-                        {
-                            methodParams.Add(queryParams);
-                            break;
-                        }
-                        if (routeArgs.TryGetValue(param.Name!, out object? routeValue))
-                        {
-                            methodParams.Add(routeValue);
-                            continue;
-                        }
-                        if (queryParams.TryGetValue(param.Name!, out string? value))
-                        {
-                            if (param.ParameterType == typeof(string[]))
-                            {
-                                methodParams.Add(value.Split('&'));
-                            }
-                            else
-                            {
-                                methodParams.Add(value);
-                            }
-                        }
-                        else
-                        {
-                            return await Task.FromResult(new ResponseAction(false, null, null));
-                        }
-                    }
-                }
-
-                object? ret = current.Method.Function.Invoke(caller, methodParams.ToArray());
-                Type? retType = current.Method.Function.ReturnType;
-
-                if (retType == typeof(Task))
-                {
-                    ret = null;
-                    retType = null;
-                }
-                else if (retType.IsGenericType && retType.GetGenericTypeDefinition() == typeof(Task<>))
-                {
-                    Task task = (Task)ret!;
-                    await task!.ConfigureAwait(false);
-
-                    ret = task.GetType().GetProperty(nameof(Task<object>.Result))!.GetValue(task);
-                    retType = ret!.GetType();
-                }
-                return new ResponseAction(true, ret, retType);
-            }
-            return await Task.FromResult(new ResponseAction(false, null, null));
+            return RoutingResult.Empty();
         }
+
+        return await InvokeMethod(session, current, routeArgs, inputParams);
+    }
+
+    private async Task<RoutingResult> InvokeMethod(
+        Session session,
+        RouteNode current,
+        Dictionary<string, object> routeArgs,
+        Dictionary<string, string> inputParams)
+    {
+        if (current.Method == null || !callers.TryGetValue(current.Method.CallerType, out var caller))
+        {
+            return RoutingResult.Empty();
+        }
+
+        var parameters = PrepareMethodParameters(session, current.Method.MethodInfo, routeArgs, inputParams);
+
+        var returnValue = current.Method.MethodInfo.Invoke(caller, parameters?.ToArray());
+        
+        return await HandleMethodResult(returnValue, current.Method.MethodInfo.ReturnType);
+    }
+
+    private List<object>? PrepareMethodParameters(
+        Session session,
+        MethodInfo method,
+        Dictionary<string, object> routeArgs,
+        Dictionary<string, string> inputParams)
+    {
+        var parameters = new List<object>();
+
+        foreach (var param in method.GetParameters())
+        {
+            if (param.ParameterType == typeof(Session))
+            {
+                parameters.Add(session);
+                continue;
+            }
+            if (param.ParameterType == typeof(Dictionary<string, string>))
+            {
+                parameters.Add(inputParams);
+                break;
+            }
+            if (routeArgs.TryGetValue(param.Name!, out object? routeValue))
+            {
+                parameters.Add(routeValue);
+                continue;
+            }
+            if (inputParams.TryGetValue(param.Name!, out string? value))
+            {
+                parameters.Add(param.ParameterType == typeof(string[]) ? value.Split('&') : value);
+                continue;
+            }
+            return null;
+        }
+        return parameters;
+    }
+
+    private async Task<RoutingResult> HandleMethodResult(object? returnValue, Type returnType)
+    {
+        if (returnType == typeof(Task))
+        {
+            return RoutingResult.Empty();
+        }
+
+        if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+        {
+            var task = (Task)returnValue!;
+            await task.ConfigureAwait(false);
+            returnValue = returnType.GetProperty(nameof(Task<object>.Result))!.GetValue(task);
+        }
+
+        return new RoutingResult(true, returnValue, returnType);
     }
 }
