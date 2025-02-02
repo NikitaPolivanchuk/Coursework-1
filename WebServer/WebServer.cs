@@ -87,19 +87,31 @@ namespace Webserver
             }
 
             var route = $"{routeBase}/{methodAttribute.Template ?? method.Name}";
+            router.AddRoute(methodAttribute.Method.Method, route, controllerType, method);
+        }
+
+        private void ProcessMethod(Type controllerType, MethodInfo method, string routeBase)
+        {
+            var methodAttribute = method.GetCustomAttribute<HttpMethodAttribute>(true);
+            if (methodAttribute == null)
+            {
+                return;
+            }
+
+            var route = $"{routeBase}/{methodAttribute.Template ?? method.Name}";
             router.AddRoute(methodAttribute.Method, route, controllerType, method);
         }
 
         public override async Task ProcessRequest()
         {
-            var url = GetRequestUrl();
-            var session = sessionManager.GetSession(context.Request.RemoteEndPoint);
-            
+            var path = GetRequestPath();
+            var session = sessionManager.GetSession(Request.RemoteEndPoint);
+
             CheckAuthorization(session);
 
-            var inputParams = await FormDataParser.ParseAsync(Request);
+            var inputParams = await GetInputParametersAsync();
 
-            var response = await router.TryRoute(session, new HttpMethod(context.Request.HttpMethod), url, inputParams);
+            var response = await router.TryRoute(session, Request.HttpMethod, path, inputParams);
 
             session.UpdateLastConnection();
 
@@ -109,20 +121,20 @@ namespace Webserver
             }
             else
             {
-                await HandleNotFoundResponse(url);
+                await HandleNotFoundResponse(path);
             }
         }
 
-        private string GetRequestUrl()
+        private string GetRequestPath()
         {
             var defaultPage = configurationProvider.GetSetting("DefaultPage") ?? "/Home/Index";
-            var url = context.Request.RawUrl;
+            var path = context.Request.Url?.LocalPath;
 
-            if (string.IsNullOrEmpty(url) || url == "/")
+            if (string.IsNullOrEmpty(path) || path == "/")
             {
-                url = defaultPage;
+                path = defaultPage;
             }
-            return url;
+            return path;
         }
 
         private void CheckAuthorization(Session session)
@@ -139,7 +151,34 @@ namespace Webserver
             }
         }
 
-        private async Task HandleSuccessfulResponse(ResponseAction response)
+
+        private async Task<Dictionary<string, string>> GetInputParametersAsync()
+        {
+            var bodyParams = await FormDataParser.ParseAsync(Request);
+            var queryParams = Request.Url?.Query.Replace("?", string.Empty).ToDictionary();
+
+            var inputParams = new Dictionary<string, string>();
+
+            if (bodyParams != null)
+            {
+                foreach ( var param in bodyParams )
+                {
+                    inputParams[param.Key] = param.Value;
+                }
+            }
+
+            if (queryParams != null)
+            {
+                foreach( var param in queryParams )
+                {
+                    inputParams[param.Key] = param.Value;
+                }
+            }
+
+            return inputParams;
+        }
+
+        private async Task HandleSuccessfulResponse(RoutingResult response)
         {
             if (response.Function == null || response.ReturnType == null)
             {
